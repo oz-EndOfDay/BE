@@ -4,7 +4,7 @@ app = FastAPI()
 
 
 @app.get("/")
-def root_handler():
+def root_handler() -> dict[str, str]:
     return {"message": "Hello World"}
 
 
