@@ -1,0 +1,61 @@
+# .github/workflows/checks.yml
+
+name: Code Quality Checks
+
+# 트리거 이벤트 부분
+# 코드가 푸시되거나 풀 리퀘스트가 생성될 때 CI가 실행됩니다.
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature/*
+  pull_request:
+
+jobs:
+  ci:
+    timeout-minutes: 5  # 최대 5분 실행
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        echo "${HOME}/.local/bin" >> $GITHUB_PATH
+
+    - name: Install Packages & Libraries
+      run: |
+        poetry install
+
+    - name: Run black (Code formatting)
+      run: |
+        poetry run black . --check
+
+    - name: Run isort (Import sorting)
+      run: |
+        poetry run isort . --check --diff
+
+    - name: Run Mypy
+      run: |
+        poetry run mypy .
+
+    - name: Run Tests
+      run: |
+        poetry run pytest tests/
+
+    - name: Run FastAPI Application
+      run: |
+        poetry run uvicorn src.main:app &
+        sleep 10  # 서버 시작 후 10초 대기
+
+    - name: Test Server
+      run: |
+        curl http://localhost:8000 || exit 1
