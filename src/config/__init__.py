@@ -5,10 +5,9 @@ from pydantic_settings import BaseSettings
 
 
 class ServerEnv(StrEnum):
-    LOCAL = "local"     # 내 로컬 환경
-    DEV = "dev"         # 개발 서버
-    PROD = "prod"       # 프로덕션 서버
-
+    LOCAL = "local"  # 내 로컬 환경
+    DEV = "dev"  # 개발 서버
+    PROD = "prod"  # 프로덕션 서버
 
 
 class Settings(BaseSettings):

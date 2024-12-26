@@ -13,7 +13,7 @@ services:
       - "9999:5432"
   cache:
     image: redis:7.2
-    container_name: ozcoding-redis
+    container_name: endofday-redis
     restart: always
     ports:
       - "60000:6379"
