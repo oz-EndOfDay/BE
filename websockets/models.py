@@ -1,13 +1,12 @@
-# websockets/models.py
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text
+from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 from sqlalchemy.sql import func
 
-Base = declarative_base()
+Base = declarative_base()  # Base는 declarative_base()로 생성된 객체입니다.
 
 
-class User(Base):
-    __tablename__ = "users"
+# mypy에서 이를 클래스 타입으로 인식하게 하기 위해 선언적인 메타클래스인 DeclarativeMeta를 사용
+class Websockets(Base):
 
     message_id = Column(Integer, primary_key=True)
     message = Column(Text)
