@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, DateTime
 
 from src.database.connection import Base
 
+
 class User(Base):
 
     __tablename__ = "users"
@@ -17,5 +18,6 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.now)
     modified_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     deleted_at = Column(DateTime)
+
 
 __all__ = ["User", "Base"]

@@ -12,6 +12,7 @@ Base = declarative_base()
 
 __all__ = ["engine", "SessionLocal", "Base"]
 
+
 # Dependency
 def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()

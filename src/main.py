@@ -6,6 +6,7 @@ app = FastAPI()
 
 Base.metadata.create_all(bind=engine)
 
+
 @app.get("/")
 def root_handler() -> dict[str, str]:
     return {"message": "Hello World"}
