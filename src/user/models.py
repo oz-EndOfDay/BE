@@ -1,0 +1,21 @@
+from datetime import datetime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, DateTime
+from src.database.connection import Base
+
+Base = declarative_base()
+
+class User(Base):
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    nickname = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    introduce = Column(String)
+    password = Column(String, nullable=False)
+    img_url = Column(String)
+    created_at = Column(DateTime, default=datetime.now)
+    modified_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    deleted_at = Column(DateTime)
