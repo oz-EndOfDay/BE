@@ -1,9 +1,7 @@
 from datetime import datetime
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, DateTime
-from src.database.connection import Base
 
-Base = declarative_base()
+from src.database.connection import Base
 
 class User(Base):
 
@@ -19,3 +17,5 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.now)
     modified_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     deleted_at = Column(DateTime)
+
+__all__ = ["User", "Base"]

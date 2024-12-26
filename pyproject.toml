@@ -15,6 +15,7 @@ sqlalchemy = "^2.0.36"
 psycopg2-binary = "^2.9.10"
 alembic = "^1.14.0"
 uvicorn = "^0.34.0"
+mypy = "^1.14.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -54,7 +55,11 @@ select = ["I", "E", "F", "W", "C90"]
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
+plugins = [ "sqlalchemy.ext.mypy.plugin", "pydantic.mypy" ]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 ignore_errors = true
+
+
+

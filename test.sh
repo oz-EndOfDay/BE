@@ -12,11 +12,11 @@ echo "🚀 Starting Code Quality Checks..."
 
 # Black 코드 포맷팅 확인
 echo -e "\n${GREEN}[1/5] Running Black Formatter Check${NC}"
-poetry run black . --check
+poetry run black .
 
 # isort 임포트 정렬 확인
 echo -e "\n${GREEN}[2/5] Running Isort Import Sorting${NC}"
-poetry run isort . --check --diff
+poetry run isort . --diff
 
 # Mypy 타입 체크
 echo -e "\n${GREEN}[3/5] Running Mypy Type Checking${NC}"

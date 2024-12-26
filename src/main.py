@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from src.user.models import Base
 from .database.connection import engine
+
 app = FastAPI()
 
 Base.metadata.create_all(bind=engine)
+
 @app.get("/")
 def root_handler() -> dict[str, str]:
     return {"message": "Hello World"}
