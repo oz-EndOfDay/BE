@@ -1,4 +1,3 @@
-import os
 from enum import StrEnum
 from typing import Any, Dict, TypeVar
 
@@ -25,4 +24,5 @@ class Settings(BaseSettings):
     @classmethod
     def get_config(cls: type[T]) -> Dict[str, Any]:
         settings = cls()
-        return settings.model_dump()
+        result: Dict[str, Any] = settings.model_dump()
+        return result
