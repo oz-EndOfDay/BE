@@ -37,6 +37,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]
+addopts = "-v"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
 
 [tool.black]
 line-length = 88
@@ -81,12 +84,3 @@ warn_required_dynamic_aliases = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 ignore_errors = true
-
-[tool.pytest.ini_options]
-# 한 번만 선언
-addopts = "-v"
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-
-
-
