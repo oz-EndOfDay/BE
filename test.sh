@@ -16,7 +16,7 @@ poetry run black .
 
 # isort 임포트 정렬 확인
 echo -e "\n${GREEN}[2/5] Running Isort Import Sorting${NC}"
-poetry run isort . --diff
+poetry run isort .
 
 # Mypy 타입 체크
 echo -e "\n${GREEN}[3/5] Running Mypy Type Checking${NC}"

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from src.user.models import Base
+
 from src.config.database.connection import engine
+from src.user.models import Base
 
 app = FastAPI()
 
