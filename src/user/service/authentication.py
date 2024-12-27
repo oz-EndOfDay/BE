@@ -5,7 +5,9 @@ import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from src.config import Settings
 
+settings = Settings()
 
 # password
 def hash_password(plain_text: str) -> str:
@@ -15,15 +17,12 @@ def hash_password(plain_text: str) -> str:
 
     return hashed_password_bytes.decode("utf-8")
 
-
 def check_password(plain_text: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_text.encode("utf-8"), hashed_password.encode("utf-8"))
 
-
 # JWT
-SECRET_KEY = "92424d57e87900cd12b3f8ae43d31a0bfcbd34ea1b0004767ad0f61ab8376803"
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
-
 
 class JWTPayLoad(TypedDict):
     user_id: int
@@ -33,7 +32,6 @@ class JWTPayLoad(TypedDict):
 def encode_access_token(user_id: int) -> str:
     payload: Dict[str, Any] = {"user_id": user_id, "isa": int(time.time())}
     access_token: str = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-
     return access_token
 
 

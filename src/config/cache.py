@@ -1,10 +1,10 @@
 from redis import Redis
 
-from config import settings
+from src.config import Settings
 
 redis_client = Redis(
-    host=settings.redis_host,
-    port=settings.redis_port,
+    host=Settings.redis_host,
+    port=Settings.redis_port,
     db=0,
     encoding="utf-8",
     decode_responses=True,
