@@ -11,12 +11,25 @@ fastapi = {extras = ["standard"], version = "^0.115.6"}
 pytest = "^8.3.4"
 psycopg2 = "^2.9.10"
 redis = "^5.2.1"
+sqlalchemy = "^2.0.36"
+psycopg2-binary = "^2.9.10"
+alembic = "^1.14.0"
+uvicorn = "^0.34.0"
+mypy = "^1.14.0"
+python-dotenv = "^1.0.1"
+pydantic-settings = "^2.7.0"
+asyncpg = "^0.30.0"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.20"
+pyjwt = "^2.10.1"
 
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
 isort = "^5.13.2"
 mypy = "^1.14.0"
+pytest-asyncio = "^0.25.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -24,14 +37,20 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]
+addopts = "-v"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
 
 [tool.black]
-line-length = 120
+line-length = 88
 target-version = ['py312']
+include = '\.pyi?$'
 
 [tool.isort]
 profile = "black"
-line_length = 120
+multi_line_output = 3
+line_length = 88
+
 
 [tool.ruff]
 line-length = 120
@@ -49,7 +68,18 @@ select = ["I", "E", "F", "W", "C90"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
+disallow_untyped_defs = true
 ignore_missing_imports = true
+plugins = [
+    "sqlalchemy.ext.mypy.plugin",
+    "pydantic.mypy"
+]
+allow_subclassing_any = true  # BaseSettings 상속 관련 오류 해결
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"
