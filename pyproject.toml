@@ -12,13 +12,16 @@ pytest = "^8.3.4"
 psycopg2 = "^2.9.10"
 redis = "^5.2.1"
 sqlalchemy = "^2.0.36"
-sqlalchemy-stubs = "^0.4"
-
+asyncpg = "^0.30.0"
+databases = "^0.9.0"
+greenlet = "^3.1.1"
+pydantic-settings = "^2.7.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
 isort = "^5.13.2"
 mypy = "^1.14.0"
+alembic = "^1.14.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -52,6 +55,15 @@ select = ["I", "E", "F", "W", "C90"]
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
+plugins = [
+    "sqlalchemy.ext.mypy.plugin"
+]
+
+# SQLAlchemy와 asyncpg 관련 오류를 처리하기 위해 추가 설정
+[mypy.plugins.sqlalchemy]
+# SQLAlchemy asyncpg용 플러그인 활성화
+check_untyped_calls = true
+check_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"
