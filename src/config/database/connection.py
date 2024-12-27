@@ -1,10 +1,12 @@
+from typing import Generator
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 
-from config import settings
+from src.config import Settings
 
-
-engine = create_engine(settings.database_url)
+settings = Settings()
+engine = create_engine(settings.DATABASE_URL)
 
 SessionFactory = sessionmaker(
     bind=engine,
@@ -14,7 +16,7 @@ SessionFactory = sessionmaker(
 )
 
 
-def get_session():
+def get_session() -> Generator[Session, None, None]:
     session = SessionFactory()
     try:
         yield session

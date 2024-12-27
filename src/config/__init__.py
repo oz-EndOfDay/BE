@@ -1,7 +1,11 @@
 import os
 from enum import StrEnum
+from typing import Any
 
-from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+load_dotenv()
 
 
 class ServerEnv(StrEnum):
@@ -11,10 +15,15 @@ class ServerEnv(StrEnum):
 
 
 class Settings(BaseSettings):
-    database_url: str
-    redis_host: str
-    redis_port: int
+    DATABASE_URL: str
+    REDIS_HOST: str
+    REDIS_PORT: int
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @classmethod
+    def get_config(cls) -> dict[str, Any]:
+        return cls().model_dump()
+
+
+settings = Settings()

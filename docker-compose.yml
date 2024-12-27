@@ -5,6 +5,7 @@ services:
     restart: always
     volumes:
       - local_db:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_DB=endofday
       - POSTGRES_USER=admin
