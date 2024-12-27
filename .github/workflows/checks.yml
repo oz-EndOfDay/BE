@@ -39,7 +39,7 @@ jobs:
       run: |
         pip install pydantic-settings
         pip install mypy
-        pip install types-python-dotenv
+        pip install python-dotenv
 
     - name: Run black (Code formatting)
       run: |
