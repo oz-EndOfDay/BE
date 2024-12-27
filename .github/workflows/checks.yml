@@ -50,14 +50,14 @@ jobs:
 
       - name: Run Tests
         env:
-          DATABASE_URL: postgresql+psycopg2://admin:admin_pw@localhost:9999/endofday_test
+          DATABASE_URL: postgresql+asyncpg://admin:admin_pw@localhost:9999/endofday_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
         run: poetry run pytest tests/
 
       - name: Start server
         env:
-          DATABASE_URL: postgresql+psycopg2://admin:admin_pw@localhost:9999/endofday_test
+          DATABASE_URL: postgresql+asyncpg://admin:admin_pw@localhost:9999/endofday_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
         run: |
