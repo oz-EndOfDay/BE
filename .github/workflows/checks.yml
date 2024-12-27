@@ -54,6 +54,10 @@ jobs:
         poetry run mypy .
 
     - name: Run Tests
+      env:
+        DATABASE_URL: postgresql+psycopg2://admin:admin_pw@localhost:9999/endofday_test
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
       run: |
         poetry run pytest tests/
 
