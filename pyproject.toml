@@ -58,7 +58,11 @@ python_version = "3.12"
 strict = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
-plugins = [ "sqlalchemy.ext.mypy.plugin", "pydantic.mypy" ]
+plugins = [
+    "sqlalchemy.ext.mypy.plugin",
+    "pydantic.mypy"
+]
+allow_subclassing_any = true  # BaseSettings 상속 관련 오류 해결
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
@@ -68,6 +72,7 @@ warn_required_dynamic_aliases = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 ignore_errors = true
+
 
 
 
