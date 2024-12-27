@@ -1,20 +1,7 @@
-# .github/workflows/checks.yml
-
-name: Code Quality Checks
-
-# 트리거 이벤트 부분
-# 코드가 푸시되거나 풀 리퀘스트가 생성될 때 CI가 실행됩니다.
-on:
-  push:
-    branches:
-      - main
-      - develop
-      - feature/*
-  pull_request:
+name: CI
 
 jobs:
-  ci:
-    timeout-minutes: 5  # 최대 5분 실행
+  test:
     runs-on: ubuntu-latest
 
     services:
@@ -32,65 +19,45 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-      redis:
-        image: redis:7.2
-        ports:
-          - "60000:6379"
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
-
-    - name: Install Poetry
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        echo "${HOME}/.local/bin" >> $GITHUB_PATH
-
-    - name: Install Packages & Libraries
-      run: |
-        poetry install
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.4'
+          
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
         
-    - name: Install dependencies
-      run: |
-        pip install pydantic-settings
-        pip install mypy
-        pip install python-dotenv
+      - name: Install dependencies
+        run: poetry install
 
-    - name: Run black (Code formatting)
-      run: |
-        poetry run black . --check
+      - name: Run Black
+        run: poetry run black . --check
 
-    - name: Run isort (Import sorting)
-      run: |
-        poetry run isort . --check --diff
+      - name: Run isort
+        run: poetry run isort . --check-only
 
-    - name: Run Mypy
-      run: |
-        poetry run mypy .
+      - name: Run Mypy
+        run: poetry run mypy .
 
-    - name: Run Tests
-      env:
-        DATABASE_URL: postgresql+psycopg2://admin:admin_pw@localhost:9999/endofday_test
-        REDIS_HOST: localhost
-        REDIS_PORT: 6379
-      run: |
-        poetry run pytest tests/
+      - name: Run Tests
+        env:
+          DATABASE_URL: postgresql+psycopg2://admin:admin_pw@localhost:9999/endofday_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: poetry run pytest tests/
 
-    - name: Start server
-      run: |
+      - name: Start server
+        env:
+          DATABASE_URL: postgresql+psycopg2://admin:admin_pw@localhost:9999/endofday_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: |
           poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 &
-          sleep 5  # 서버가 시작될 때까지 대기
+          sleep 5
 
-    - name: Test Server
-      run: |
-        curl http://localhost:8000 || exit 1
+      - name: Test Server
+        run: |
+          curl http://localhost:8000 || exit 1

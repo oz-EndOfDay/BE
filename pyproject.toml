@@ -33,12 +33,15 @@ build-backend = "poetry.core.masonry.api"
 pythonpath = [".", "src"]
 
 [tool.black]
-line-length = 120
+line-length = 88
 target-version = ['py312']
+include = '\.pyi?$'
 
 [tool.isort]
 profile = "black"
-line_length = 120
+multi_line_output = 3
+line_length = 88
+
 
 [tool.ruff]
 line-length = 120
