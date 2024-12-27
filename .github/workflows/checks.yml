@@ -34,6 +34,12 @@ jobs:
     - name: Install Packages & Libraries
       run: |
         poetry install
+        
+    - name: Install dependencies
+      run: |
+        pip install pydantic-settings
+        pip install mypy
+        pip install types-python-dotenv
 
     - name: Run black (Code formatting)
       run: |
