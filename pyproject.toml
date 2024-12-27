@@ -19,13 +19,17 @@ mypy = "^1.14.0"
 python-dotenv = "^1.0.1"
 pydantic-settings = "^2.7.0"
 asyncpg = "^0.30.0"
-greenlet = "^3.1.1"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.20"
+pyjwt = "^2.10.1"
 
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
 isort = "^5.13.2"
 mypy = "^1.14.0"
+pytest-asyncio = "^0.25.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -33,6 +37,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]
+addopts = "-v"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
 
 [tool.black]
 line-length = 88
@@ -77,7 +84,3 @@ warn_required_dynamic_aliases = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 ignore_errors = true
-
-
-
-

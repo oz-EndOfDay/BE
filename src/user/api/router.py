@@ -1,33 +1,28 @@
-from typing import Dict
-
-from fastapi import APIRouter, Depends, FastAPI, HTTPException
-from pydantic import BaseModel, EmailStr
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette import status
 
-from src.config.database.connection import get_session
+from src.config.database.connection import get_async_session
 from src.user.models import User
-from src.user.schema.request import CreateUserRequestBody
+from src.user.schema.request import CreateRequestBody
 
-router = APIRouter(prefix="/user", tags=["user"])
+router = APIRouter(prefix="/users", tags=["User"])
 
 
-@router.post(
-    "",
-    status_code=status.HTTP_201_CREATED,
-)
+@router.post(path="/create", status_code=status.HTTP_201_CREATED)
 async def create_user(
-    body: CreateUserRequestBody,
-    session: AsyncSession = Depends(get_session),
-) -> Dict[str, str]:
-
+    body: CreateRequestBody, session: AsyncSession = Depends(get_async_session)
+) -> tuple[int, dict[str, str]]:
     new_user = User.create(
-        name=body.name, nickname=body.nickname, password=body.password, email=body.email
+        name=body.name,
+        nickname=body.nickname,
+        email=body.email,
+        password=body.password,
     )
+
     session.add(new_user)
-    await session.commit()  # db 저장
+    await session.commit()
 
-    return {"message": "User created successfully."}
-
-
-__all__ = ["router"]
+    return 201, {
+        "message": "회원가입이 성공적으로 처리되었습니다.",
+        "status": "success",
+    }
