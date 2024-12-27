@@ -1,6 +1,6 @@
 import os
 from enum import StrEnum
-from typing import Any
+from typing import Any, Dict
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -22,8 +22,6 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @classmethod
-    def get_config(cls) -> dict[str, Any]:
-        return cls().model_dump()
-
-
-settings = Settings()
+    def get_config(cls) -> Dict[str, Any]:
+        settings = cls()
+        return settings.model_dump()
