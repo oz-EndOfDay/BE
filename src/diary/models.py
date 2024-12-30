@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import Column, Integer, ForeignKey, Text, DateTime, Enum, String, Date
+from sqlalchemy import Column, Date, DateTime, Enum, ForeignKey, Integer, String, Text
 
 from src.config.database.orm import Base
 from src.user.models import User
@@ -14,6 +14,7 @@ class WeatherEnum(str, PyEnum):
     rainy = "비"
     snowy = "눈"
 
+
 class MoodEnum(str, PyEnum):
     happy = "기쁨"
     good = "좋음"
@@ -21,8 +22,9 @@ class MoodEnum(str, PyEnum):
     tired = "지침"
     sad = "슬픔"
 
+
 class Diary(Base):
-    __tablename__ = "diary"
+    __tablename__ = "diaries"
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
@@ -36,5 +38,22 @@ class Diary(Base):
     deleted_at = Column(DateTime, nullable=True)
 
     @classmethod
-    async def create(cls, user_id: int, title: str, write_date: datetime, weather: WeatherEnum, mood: MoodEnum, content: str, img_url: str):
-        return cls(user_id=user_id, title=title, write_date=write_date, weather=weather, mood=mood, content=content, img_url=img_url)
+    async def create(
+        cls,
+        user_id: int,
+        title: str,
+        write_date: datetime,
+        weather: WeatherEnum,
+        mood: MoodEnum,
+        content: str,
+        img_url: str,
+    ) -> "Diary":
+        return cls(
+            user_id=user_id,
+            title=title,
+            write_date=write_date,
+            weather=weather,
+            mood=mood,
+            content=content,
+            img_url=img_url,
+        )

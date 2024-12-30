@@ -3,14 +3,13 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI
 
-from src.config.database.orm import Base
 # 데이터베이스 관련 모듈
 from src.config.database.connection import async_engine
+from src.config.database.orm import Base
+from src.diary.api.router import router as diary_router
 
 # 라우터 import
 from src.user.api.router import router as user_router
-from src.diary.api.router import router as diary_router
-
 
 
 # 비동기 컨텍스트 관리자 사용

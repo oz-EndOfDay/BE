@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from src.diary.models import WeatherEnum, MoodEnum
+from src.diary.models import MoodEnum, WeatherEnum
 
 
 class WriteDiaryRequest(BaseModel):

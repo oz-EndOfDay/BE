@@ -3,7 +3,6 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-
 from src.config.database.orm import Base
 
 # this is the Alembic Config object, which provides
@@ -15,13 +14,13 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+from src.diary.models import *  # noqa
+
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from src.user.models import * # noqa
-from src.diary.models import * # noqa
-
+from src.user.models import *  # noqa
 
 target_metadata = Base.metadata
 

@@ -9,6 +9,6 @@ class DiaryReqository:
     def __init__(self, session: Session = Depends(get_async_session)):
         self.session = session
 
-    async def save(self, diary: Diary):
+    async def save(self, diary: Diary) -> None:
         self.session.add(diary)
-        await self.session.commit()
+        await self.session.commit()  # type: ignore
