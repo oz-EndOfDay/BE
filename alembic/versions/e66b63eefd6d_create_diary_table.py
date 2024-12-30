@@ -1,8 +1,8 @@
-"""create Diary table
+"""create diary table
 
-Revision ID: 380bc1081281
+Revision ID: e66b63eefd6d
 Revises: 9ea12a8244d9
-Create Date: 2024-12-30 12:45:18.436002
+Create Date: 2024-12-30 16:59:34.923793
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '380bc1081281'
+revision: str = 'e66b63eefd6d'
 down_revision: Union[str, None] = '9ea12a8244d9'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,11 +24,11 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('title', sa.Text(), nullable=False),
-    sa.Column('date', sa.DateTime(), nullable=False),
+    sa.Column('write_date', sa.Date(), nullable=False),
     sa.Column('weather', sa.Enum('clear', 'some_clouds', 'cloudy', 'rainy', 'snowy', name='weatherenum'), nullable=True),
     sa.Column('mood', sa.Enum('happy', 'good', 'normal', 'tired', 'sad', name='moodenum'), nullable=True),
     sa.Column('content', sa.Text(), nullable=False),
-    sa.Column('img_url', sa.String(length=255), nullable=False),
+    sa.Column('img_url', sa.String(length=255), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
