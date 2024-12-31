@@ -4,6 +4,9 @@ version = "0.1.0"
 description = ""
 authors = ["mountain-kangkang <rngl10@naver.com>"]
 readme = "README.md"
+packages = [
+    {include = "src", from = "."}
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -74,11 +77,13 @@ python_version = "3.12"
 strict = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
+allow_subclassing_any = true  # BaseSettings 상속 관련 오류 해결
+namespace_packages = true
+explicit_package_bases = true
 plugins = [
     "sqlalchemy.ext.mypy.plugin",
     "pydantic.mypy"
 ]
-allow_subclassing_any = true  # BaseSettings 상속 관련 오류 해결
 exclude = [
     "^alembic/",  # 루트 디렉토리 바로 아래의 alembic 디렉토리 제외
 ]

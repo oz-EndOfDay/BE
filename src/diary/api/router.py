@@ -4,10 +4,10 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
-from src.diary.models import Diary, MoodEnum, WeatherEnum
-from src.diary.reqository import DiaryReqository
-from src.diary.schema.response import DiaryListResponse
-from src.user.service.authentication import authenticate
+from diary.models import Diary, MoodEnum, WeatherEnum
+from diary.reqository import DiaryReqository
+from diary.schema.response import DiaryListResponse
+from user.service.authentication import authenticate
 
 router = APIRouter(prefix="/diary", tags=["Diary"])
 
@@ -35,7 +35,7 @@ async def write_diary(
     new_diary = await Diary.create(
         user_id=user_id,
         title=title,
-        write_date=write_date,  # type: ignore
+        write_date=write_date,
         weather=weather,
         mood=mood,
         content=content,

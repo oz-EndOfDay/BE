@@ -3,8 +3,8 @@ from enum import Enum as PyEnum
 
 from sqlalchemy import Column, Date, DateTime, Enum, ForeignKey, Integer, String, Text
 
-from src.config.database.orm import Base
-from src.user.models import User
+from config.database.orm import Base
+from user.models import User
 
 
 class WeatherEnum(str, PyEnum):
@@ -30,8 +30,8 @@ class Diary(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     title = Column(Text, nullable=False)
     write_date = Column(Date, nullable=False)
-    weather = Column(Enum(WeatherEnum))
-    mood = Column(Enum(MoodEnum))
+    weather: Column[Enum] = Column(Enum(WeatherEnum))
+    mood: Column[Enum] = Column(Enum(MoodEnum))
     content = Column(Text, nullable=False)
     img_url = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.now)

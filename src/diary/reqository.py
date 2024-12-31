@@ -4,8 +4,8 @@ from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.database.connection import get_async_session
-from src.diary.models import Diary
+from config.database.connection import get_async_session
+from diary.models import Diary
 
 
 class DiaryReqository:
