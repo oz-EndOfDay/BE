@@ -42,6 +42,8 @@ pythonpath = [".", "src"]
 addopts = "-v"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.black]
 line-length = 88
