@@ -5,7 +5,7 @@
 # from sqlalchemy.ext.declarative import declarative_base
 # from datetime import datetime, timedelta
 # from pydantic import BaseModel, Field
-#
+# 주석
 # Base = declarative_base()
 #
 # class BlackListItem(BaseModel):
