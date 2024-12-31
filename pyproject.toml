@@ -79,6 +79,9 @@ plugins = [
     "pydantic.mypy"
 ]
 allow_subclassing_any = true  # BaseSettings 상속 관련 오류 해결
+exclude = [
+    "^alembic/",  # 루트 디렉토리 바로 아래의 alembic 디렉토리 제외
+]
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
