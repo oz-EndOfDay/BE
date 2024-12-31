@@ -8,13 +8,13 @@ from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config import Settings
-from src.config.database.connection import get_async_session
-from src.user.models import User
-from src.user.repository import UserRepository
-from src.user.schema.request import CreateRequestBody, UpdateRequestBody
-from src.user.schema.response import JWTResponse, UserMeResponse
-from src.user.service.authentication import (
+from config import Settings
+from config.database.connection import get_async_session
+from user.models import User
+from user.repository import UserRepository
+from user.schema.request import CreateRequestBody, UpdateRequestBody
+from user.schema.response import JWTResponse, UserMeResponse
+from user.service.authentication import (
     ALGORITHM,
     authenticate,
     create_verification_token,
@@ -23,7 +23,7 @@ from src.user.service.authentication import (
     hash_password,
     verify_password,
 )
-from src.user.service.smtp import send_email
+from user.service.smtp import send_email
 
 settings = Settings()
 

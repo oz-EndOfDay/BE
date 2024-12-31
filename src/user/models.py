@@ -3,9 +3,10 @@ from datetime import datetime
 from typing import Type, TypeVar
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy.types import DateTime as SQLDateTime
 
-from src.config.database.orm import Base
-from src.user.service.authentication import hash_password
+from config.database.orm import Base
+from user.service.authentication import hash_password
 
 T = TypeVar("T", bound="User")  # Generic type variable for the class method
 
@@ -22,7 +23,7 @@ class User(Base):
     img_url = Column(String)
     created_at = Column(DateTime, default=datetime.now)
     modified_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
-    deleted_at = Column(DateTime)
+    deleted_at = Column(SQLDateTime, nullable=True)
     is_active = Column(Boolean, default=False)
 
     @staticmethod

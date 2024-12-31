@@ -50,5 +50,5 @@ class UserRepository:
 
     async def soft_delete_user(self, user_id: int) -> None:
         user = await self.get_user_by_id(user_id)
-        user.deleted_at = datetime.now()  # Soft delete 처리
+        setattr(user, "deleted_at", datetime.now())
         await self.session.commit()
