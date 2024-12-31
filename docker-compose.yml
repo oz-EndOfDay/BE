@@ -1,0 +1,23 @@
+services:
+  db:
+    container_name: endofday-db
+    image: postgres:14
+    restart: always
+    volumes:
+      - local_db:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_DB=endofday
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin_pw
+    ports:
+      - "9999:5432"
+  cache:
+    image: redis:7.2
+    container_name: endofday-redis
+    restart: always
+    ports:
+      - "60000:6379"
+
+volumes:
+  local_db:

@@ -1,0 +1,1 @@
+CREATE DATABASE endofday_test;
