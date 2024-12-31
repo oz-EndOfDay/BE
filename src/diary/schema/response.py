@@ -2,7 +2,7 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict
 
-from src.diary.models import Diary
+from diary.models import Diary
 
 
 class DiaryBriefResponse(BaseModel):

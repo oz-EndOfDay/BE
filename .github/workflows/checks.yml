@@ -64,6 +64,7 @@ jobs:
           REDIS_PORT: ${{ secrets.REDIS_PORT }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          PYTHONPATH: ${{ github.workspace }}/src
         run: |
           poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 &
           sleep 5
