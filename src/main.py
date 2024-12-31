@@ -6,10 +6,11 @@ from fastapi.openapi.utils import get_openapi
 
 # 데이터베이스 관련 모듈
 from src.config.database.connection import async_engine
+from src.config.database.orm import Base
+from src.diary.api.router import router as diary_router
 
 # 라우터 import
 from src.user.api.router import router as user_router
-from src.user.models import Base
 
 
 # 비동기 컨텍스트 관리자 사용
@@ -26,6 +27,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(lifespan=lifespan)
 # 라우터 포함
 app.include_router(user_router)
+app.include_router(diary_router)
 
 
 # 기본 루트 핸들러

@@ -70,3 +70,12 @@ def authenticate(
             detail="Token expired",
         )
     return payload["user_id"]
+
+
+def create_verification_token(email: str) -> str:
+    payload = {
+        "email": email,
+        "exp": datetime.now() + timedelta(hours=1),  # 1시간 후 만료
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return token

@@ -1,10 +1,11 @@
-from datetime import datetime, timedelta
+import uuid
+from datetime import datetime
 from typing import Dict
 
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import Settings
@@ -14,16 +15,18 @@ from src.user.repository import UserRepository
 from src.user.schema.request import CreateRequestBody, UpdateRequestBody
 from src.user.schema.response import JWTResponse, UserMeResponse
 from src.user.service.authentication import (
-    ACCESS_TOKEN_EXPIRE_MINUTES,
+    ALGORITHM,
     authenticate,
+    create_verification_token,
     decode_access_token,
     encode_access_token,
     hash_password,
     verify_password,
 )
+from src.user.service.smtp import send_email
 
 settings = Settings()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
+
 router = APIRouter(prefix="/users", tags=["User"])
 
 
@@ -43,12 +46,56 @@ async def create_user(
 
     created_user = await user_repo.create_user(new_user)  # 올바른 메서드 호출
 
+    # 인증 토큰 생성
+    token = create_verification_token(user_data.email)
+    # 인증 링크 생성
+    verification_link = f"http://localhost:8000/users/email_verify/{token}"
+
+    await send_email(
+        to=user_data.email,
+        subject="Email Verification",
+        body=f"Please verify your email by clicking the following link: {verification_link}",
+    )
+
     return UserMeResponse(
         id=created_user.id,
         name=created_user.name,
         nickname=created_user.nickname,
-        email=created_user.email,
     )
+
+
+# 회원가입 이메일 인증
+@router.get("/email_verify/{token}")
+async def verify_email(
+    token: str, session: AsyncSession = Depends(get_async_session)
+) -> Dict[str, str]:
+
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("email")
+
+        if email is None:
+            raise HTTPException(status_code=400, detail="Invalid token")
+
+        user_repo = UserRepository(session)
+        user = await user_repo.get_user_by_email(email)  # 이메일로 사용자 조회
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        user.is_active = True
+
+        if user.id is None:
+            raise HTTPException(status_code=400, detail="User ID is invalid")
+        await user_repo.update_user(user.id, user.__dict__)
+
+        return {"message": "Email verified successfully!"}
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=400, detail="Token has expired")
+
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=400, detail="Invalid token")
 
 
 # 로그인 엔드포인트 구현 (비동기)
@@ -132,14 +179,13 @@ async def update_user(
     existing_user.nickname = (
         user_data.nickname if user_data.nickname else existing_user.nickname
     )
-    existing_user.email = user_data.email if user_data.email else existing_user.email
     existing_user.img_url = (
         user_data.img_url if user_data.img_url else existing_user.img_url
     )
     existing_user.introduce = (
         user_data.introduce if user_data.introduce else existing_user.introduce
     )
-    existing_user.modified_at = datetime.utcnow()
+    existing_user.modified_at = datetime.now()
 
     # 비밀번호가 제공된 경우에만 해싱하여 업데이트
     if user_data.password:
@@ -152,8 +198,6 @@ async def update_user(
         id=existing_user.id,
         name=existing_user.name,
         nickname=existing_user.nickname,
-        email=existing_user.email,
-        modified_at=existing_user.modified_at,
     )
 
 

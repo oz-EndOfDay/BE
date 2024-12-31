@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, Dict
 
 from fastapi import HTTPException
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -26,6 +27,17 @@ class UserRepository:
             raise HTTPException(status_code=404, detail="User not found")
         return user
 
+    async def get_user_by_email(self, email: str) -> User | None:
+        stmt = select(User).where(User.email == email)
+
+        result = await self.session.execute(stmt)
+
+        try:
+            user = result.scalar_one()  # 단일 결과를 가져옴
+            return user
+        except NoResultFound:
+            return None
+
     async def update_user(self, user_id: int, user_data: Dict[str, Any]) -> User:
         user = await self.get_user_by_id(user_id)
 
@@ -38,5 +50,5 @@ class UserRepository:
 
     async def soft_delete_user(self, user_id: int) -> None:
         user = await self.get_user_by_id(user_id)
-        user.deleted_at = datetime.utcnow()  # Soft delete 처리
+        user.deleted_at = datetime.now()  # Soft delete 처리
         await self.session.commit()

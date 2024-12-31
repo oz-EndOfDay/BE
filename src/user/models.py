@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from typing import Type, TypeVar
 
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
 from src.config.database.orm import Base
 from src.user.service.authentication import hash_password
@@ -23,6 +23,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.now)
     modified_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     deleted_at = Column(DateTime)
+    is_active = Column(Boolean, default=False)
 
     @staticmethod
     def _is_bcrypt_pattern(password: str) -> bool:

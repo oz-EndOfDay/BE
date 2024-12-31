@@ -13,7 +13,6 @@ class CreateRequestBody(BaseModel):
 class UpdateRequestBody(BaseModel):
     name: str = Field(..., max_length=35)
     nickname: str = Field(..., max_length=35)
-    email: str = Field(..., max_length=50)
     password: str = Field(..., max_length=50)
     introduce: str = Field(...)
     img_url: str = Field(...)
