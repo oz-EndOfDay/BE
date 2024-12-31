@@ -53,6 +53,7 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://admin:admin_pw@localhost:9999/endofday_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: poetry run pytest tests/
 
       - name: Start server
@@ -60,6 +61,7 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://admin:admin_pw@localhost:9999/endofday_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: |
           poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 &
           sleep 5
