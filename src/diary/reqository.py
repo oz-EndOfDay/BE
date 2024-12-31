@@ -1,20 +1,27 @@
+from typing import Sequence
+
 from fastapi import Depends
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.database.connection import get_async_session
 from src.diary.models import Diary
 
 
 class DiaryReqository:
-    def __init__(self, session: Session = Depends(get_async_session)):
+    def __init__(self, session: AsyncSession = Depends(get_async_session)):
         self.session = session
 
     async def save(self, diary: Diary) -> None:
         self.session.add(diary)
-        await self.session.commit()  # type: ignore
+        await self.session.commit()
 
-    async def get_diary_list(self, user_id: int) -> list[Diary] | None:
-        query = select(Diary).where(Diary.user_id == user_id).order_by(Diary.created_at.desc())
+    async def get_diary_list(self, user_id: int) -> Sequence[Diary] | None:
+        query = (
+            select(Diary)
+            .where(Diary.user_id == user_id)
+            .order_by(Diary.created_at.desc())
+        )
         result = await self.session.execute(query)
-        return result.scalars().all()
+        diaries = result.scalars().all()
+        return diaries or None

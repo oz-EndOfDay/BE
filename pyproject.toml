@@ -15,7 +15,6 @@ sqlalchemy = "^2.0.36"
 psycopg2-binary = "^2.9.10"
 alembic = "^1.14.0"
 uvicorn = "^0.34.0"
-mypy = "^1.14.0"
 python-dotenv = "^1.0.1"
 pydantic-settings = "^2.7.0"
 asyncpg = "^0.30.0"
@@ -30,6 +29,7 @@ black = "^24.10.0"
 isort = "^5.13.2"
 mypy = "^1.14.0"
 pytest-asyncio = "^0.25.0"
+sqlalchemy = {extras = ["mypy"], version = "^2.0.36"}
 
 [build-system]
 requires = ["poetry-core"]

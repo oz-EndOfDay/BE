@@ -4,9 +4,9 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
-from src.diary.schema.response import DiaryListResponse
 from src.diary.models import Diary, MoodEnum, WeatherEnum
 from src.diary.reqository import DiaryReqository
+from src.diary.schema.response import DiaryListResponse
 from src.user.service.authentication import authenticate
 
 router = APIRouter(prefix="/diary", tags=["Diary"])
@@ -56,14 +56,14 @@ async def write_diary(
 async def diary_list(
     # user_id: int = Depends(authenticate),
     diary_repo: DiaryReqository = Depends(),
-) -> tuple[int, dict[str | int, str]]:
+) -> tuple[int, DiaryListResponse]:
     user_id = 1
 
     diaries = await diary_repo.get_diary_list(user_id)
     if not diaries:
         raise HTTPException(
             status_code=status.HTTP_200_OK,
-            detail={"message": "작성된 일기가 없습니다", "status": "success"}
+            detail={"message": "작성된 일기가 없습니다", "status": "success"},
         )
 
-    return DiaryListResponse.build(diaries=diaries)
+    return 200, DiaryListResponse.build(diaries=list(diaries))

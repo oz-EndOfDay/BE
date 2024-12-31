@@ -12,19 +12,18 @@ class DiaryBriefResponse(BaseModel):
     content: str
 
     @classmethod
-    def build(cls, diary: Diary):
+    def build(cls, diary: Diary) -> "DiaryBriefResponse":
         return cls(
-            id = diary.id,
-            title = diary.title,
-            write_date = diary.write_date,
-            content = diary.content
+            id=diary.id or 0,
+            title=diary.title or "",
+            write_date=diary.write_date or date.today(),
+            content=diary.content or "",
         )
+
 
 class DiaryListResponse(BaseModel):
     diaries: list[DiaryBriefResponse]
 
     @classmethod
-    def build(cls, diaries: list[Diary]):
-        return cls(
-            diaries=[DiaryBriefResponse.build(diary=d) for d in diaries]
-        )
+    def build(cls, diaries: list[Diary]) -> "DiaryListResponse":
+        return cls(diaries=[DiaryBriefResponse.build(diary=d) for d in diaries])
