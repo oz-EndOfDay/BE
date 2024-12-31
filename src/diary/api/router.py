@@ -14,7 +14,7 @@ router = APIRouter(prefix="/diary", tags=["Diary"])
 
 @router.post(path="", status_code=status.HTTP_201_CREATED)
 async def write_diary(
-    # user_id: int = Depends(authenticate),
+    user_id: int = Depends(authenticate),
     title: str = Form(...),
     write_date: date = Form(...),
     weather: WeatherEnum = Form(...),
@@ -23,7 +23,6 @@ async def write_diary(
     image: UploadFile | str = File(default=None),
     diary_repo: DiaryReqository = Depends(),
 ) -> tuple[int, dict[str, str]]:
-    user_id = 1
     img_url: str | None = None
 
     if image and image.filename:  # type: ignore
@@ -54,11 +53,9 @@ async def write_diary(
 
 @router.get(path="", status_code=status.HTTP_200_OK, response_model=DiaryListResponse)
 async def diary_list(
-    # user_id: int = Depends(authenticate),
+    user_id: int = Depends(authenticate),
     diary_repo: DiaryReqository = Depends(),
 ) -> tuple[int, DiaryListResponse]:
-    user_id = 1
-
     diaries = await diary_repo.get_diary_list(user_id)
     if not diaries:
         raise HTTPException(
