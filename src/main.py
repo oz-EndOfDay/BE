@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
 
 # 데이터베이스 관련 모듈
 from src.config.database.connection import async_engine
