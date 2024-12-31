@@ -9,6 +9,7 @@ from src.config.database.connection import async_engine
 # 라우터 import
 from src.user.api.router import router as user_router
 from src.user.models import Base
+from src.websocket.api.router import router as websocket_router
 
 
 # 비동기 컨텍스트 관리자 사용
@@ -23,8 +24,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 # FastAPI 앱 생성 with lifespan
 app = FastAPI(lifespan=lifespan)
+
 # 라우터 포함
 app.include_router(user_router)
+app.include_router(websocket_router)
 
 
 # 기본 루트 핸들러
@@ -37,4 +40,4 @@ def root_handler() -> dict[str, str]:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("src.main:app", host="0.0.0.0", port=5432, reload=True)
