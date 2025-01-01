@@ -1,3 +1,5 @@
+import random
+import string
 import time
 from datetime import datetime, timedelta
 from typing import Any, TypedDict, cast
@@ -79,3 +81,8 @@ def create_verification_token(email: str) -> str:
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return token
+
+
+# 임시비밀번호 랜덤 생성기 ( 8자리 )
+def generate_password() -> str:
+    return "".join(random.choices(string.ascii_letters + string.digits, k=8))

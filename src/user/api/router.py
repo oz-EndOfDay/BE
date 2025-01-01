@@ -21,6 +21,7 @@ from src.user.service.authentication import (
     create_verification_token,
     decode_access_token,
     encode_access_token,
+    generate_password,
     hash_password,
     verify_password,
 )
@@ -63,6 +64,32 @@ async def create_user(
         name=created_user.name,
         nickname=created_user.nickname,
     )
+
+
+@router.get("/forgot_password")
+async def forgot_password(
+    email: str, session: AsyncSession = Depends(get_async_session)
+) -> Dict[str, str]:
+    result = await session.execute(select(User).filter(User.email == email))
+    user: User | None = result.scalars().first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Email not found"
+        )
+
+    temp_password = generate_password()  # 임시 비밀번호 생성
+    user.password = hash_password(
+        temp_password
+    )  # 임시 비밀번호도 보안을 위해 해시하고 저장하자.
+    await session.commit()
+
+    await send_email(
+        to=email,
+        subject="Forgot Password",
+        body=f"Your temporary password is {temp_password}. Please change your password after logging in with your temporary password.",
+    )
+
+    return {"Message": "Temporary password has been sent your mail."}
 
 
 # 회원가입 이메일 인증
