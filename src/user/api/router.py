@@ -8,6 +8,7 @@ from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from blacklist import blacklist_token
 from src.config import Settings
 from src.config.database.connection import get_async_session
 from src.user.models import User
@@ -142,8 +143,8 @@ async def logout_handler(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )
 
-        # 토큰을 블랙리스트에 추가 추후에 블랙리스트 테이블 만들어서 작업
-
+        # 토큰을 블랙리스트에 추가하는 기능 필요
+        await blacklist_token(access_token)
         return {"detail": "Successfully logged out"}
 
     except JWTError:
