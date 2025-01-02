@@ -4,10 +4,10 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-TEST_SECRET_KEY = os.getenv("TEST_SECRET_KEY", "default_test_secret_key")
-TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "default_test_database_url")
-TEST_REDIS_HOST = os.getenv("TEST_REDIS_HOST", "default_test_redis_host")
-TEST_REDIS_PORT = os.getenv("TEST_REDIS_PORT", "default_test_redis_port")
+TEST_SECRET_KEY = os.getenv("TEST_SECRET_KEY")
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
+TEST_REDIS_HOST = os.getenv("TEST_REDIS_HOST")
+TEST_REDIS_PORT = os.getenv("TEST_REDIS_PORT")
 
 
 def pytest_configure() -> None:
