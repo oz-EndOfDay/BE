@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import HTTPException
+from sqlalchemy import Nullable
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -76,14 +77,24 @@ class UserRepository:
             raise UserNotFoundException(f"User with id {user_id} not found")
 
         user.deleted_at = datetime.now()  # Soft delete 처리
+        user.is_active = False
         await self.session.commit()
 
     # 비밀번호 분실
     async def forgot_password(self, user_email: str) -> str:
         user = await self.get_user_by_email(user_email)
         if user is None:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise UserNotFoundException(f"User with email {user_email} not found")
         temp_password = generate_password()
         user.password = hash_password(temp_password)
         await self.session.commit()
         return temp_password
+
+    # 계정 복구
+    async def recovery_account(self, user_email: str) -> None:
+        user = await self.get_user_by_email(user_email)
+        if user is None:
+            raise UserNotFoundException(f"User with email {user_email} not found")
+        user.is_active = True
+        user.deleted_at = None
+        await self.session.commit()

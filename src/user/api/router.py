@@ -1,6 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict
-
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from jose import JWTError
@@ -93,7 +92,7 @@ async def get_users(
 
 
 # 패스워드 분실
-@router.get("/forgot_password", summary="패스워드 분실 시 임시 비밀번호 발급")
+@router.post("/forgot_password", summary="패스워드 분실 시 임시 비밀번호 발급")
 async def forgot_password(
     email: str, session: AsyncSession = Depends(get_async_session)
 ) -> Dict[str, str]:
@@ -111,7 +110,7 @@ async def forgot_password(
 
 
 # 회원가입 이메일 인증
-@router.get("/email_verify/{token}", summary="올바른(실제 사용중) 이메일 검증")
+@router.get("/email_verify/{token}/", summary="올바른(실제 사용중) 이메일 검증")
 async def verify_email(
     token: str, session: AsyncSession = Depends(get_async_session)
 ) -> Dict[str, str]:
@@ -145,7 +144,7 @@ async def verify_email(
 
 # 로그인 엔드포인트 구현 (비동기)
 @router.post(
-    "/login",
+    "/login/",
     summary="로그인",
     response_model=JWTResponse,
     status_code=status.HTTP_200_OK,
@@ -177,8 +176,9 @@ async def login_handler(
             )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Please check your email to complete email verification.",
+            detail="This account does not have email verification.",
         )
+
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail="User not found",
@@ -186,7 +186,7 @@ async def login_handler(
 
 
 # 로그아웃 엔드포인트
-@router.post("/logout", summary="로그아웃", status_code=status.HTTP_200_OK)
+@router.post("/logout/", summary="로그아웃", status_code=status.HTTP_200_OK)
 async def logout_handler(request: Request) -> Dict[str, str]:
     try:
         access_token = request.cookies.get("access_token")
@@ -243,7 +243,7 @@ async def update_user(
 
 # soft delete 방식으로 삭제 일자를 db에 입력 후 7일 지난 데이터는 안보이도록 함.
 @router.delete(
-    path="/delete", summary="회원 탈퇴(Soft Delete)", status_code=status.HTTP_200_OK
+    path="/delete/", summary="회원 탈퇴(Soft Delete)", status_code=status.HTTP_200_OK
 )
 async def delete_user(
     user_id: int = Depends(authenticate),
@@ -261,3 +261,70 @@ async def delete_user(
         "message": "회원탈퇴가 처리되었습니다. 데이터는 7일간 보관됩니다.",
         "status": "success",
     }
+
+
+@router.post(
+    path="/recovery/", summary="계정 복구 가능 여부", status_code=status.HTTP_200_OK
+)
+async def recovery_possible(
+    user_email: str,
+    session: AsyncSession = Depends(get_async_session),
+) -> dict[str, str]:
+    user_repo = UserRepository(session)
+    user = await user_repo.get_user_by_email(user_email)
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.is_active:
+        raise HTTPException(status_code=403, detail="Account is active")
+    if user.deleted_at and user.deleted_at < datetime.now() - timedelta(days=7):
+        raise HTTPException(status_code=403, detail="Deleted after 7 days")
+
+    token = create_verification_token(user.email)
+    # 인증 링크 생성
+    recovery_link = f"http://localhost:8000/users/recovery/{token}"
+
+    await send_email(
+        to=user.email,
+        subject="Recovery Account",
+        body=f"Please recovery your account by clicking the following link:{recovery_link}",
+    )
+    return {
+        "message": "입력한 이메일로 계정 복구 메일을 전송하였습니다.",
+        "status": "success",
+    }
+
+
+@router.get(
+    path="/recovery/{token}", summary="계정 복구", status_code=status.HTTP_200_OK
+)
+async def recovery_account(
+    token: str,
+    session: AsyncSession = Depends(get_async_session),
+) -> dict[str, str]:
+    print("여기까진 도달함.")
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("email")
+        print(f'사용자의 이메일은 {email}')
+
+        if email is None:
+            raise HTTPException(status_code=400, detail="Invalid token")
+
+        user_repo = UserRepository(session)
+        user = await user_repo.get_user_by_email(email)
+
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        await user_repo.recovery_account(email)  # 이메일로 사용자 조회
+
+        return {
+            "message": "계정이 복구되었습니다.",
+            "status": "success",
+        }
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=400, detail="Token has expired")
+
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=400, detail="Invalid token")
