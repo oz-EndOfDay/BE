@@ -26,8 +26,12 @@ class DiaryReqository:
         diaries = result.scalars().all()
         return diaries or None
 
-    async def get_diary_detail(self, diary_id: int, user_id: int) -> Diary:
-        query = select(Diary).where(Diary.id == diary_id, Diary.user_id == user_id)
+    async def get_diary_detail(self, diary_id: int) -> Diary:
+        query = select(Diary).where(Diary.id == diary_id)
         result = await self.session.execute(query)
         diary = result.scalars().first()
         return diary
+
+    async def delete(self, diary: Diary) -> None:
+        await self.session.delete(diary)
+        await self.session.commit()

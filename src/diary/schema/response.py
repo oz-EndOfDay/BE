@@ -1,8 +1,8 @@
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
-from diary.models import Diary, MoodEnum, WeatherEnum
+from diary.models import Diary
 
 
 class DiaryBriefResponse(BaseModel):
@@ -33,10 +33,10 @@ class DiaryDetailResponse(BaseModel):
     id: int
     title: str
     write_date: date
-    weather: WeatherEnum
-    mood: MoodEnum
+    weather: str
+    mood: str
     content: str
     img_url: str
 
-    class ConfigDict:
+    class Config:
         from_attributes = True

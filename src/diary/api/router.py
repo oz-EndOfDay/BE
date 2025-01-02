@@ -21,7 +21,12 @@ from user.service.authentication import authenticate
 router = APIRouter(prefix="/diary", tags=["Diary"])
 
 
-@router.post(path="", summary="일기 작성", status_code=status.HTTP_201_CREATED)
+@router.post(
+    path="",
+    summary="일기 작성",
+    response_model=None,
+    status_code=status.HTTP_201_CREATED,
+)
 async def write_diary(
     user_id: int = Depends(authenticate),
     title: str = Form(...),
@@ -32,6 +37,7 @@ async def write_diary(
     image: UploadFile | str = File(default=None),
     diary_repo: DiaryReqository = Depends(),
 ) -> tuple[int, dict[str, str]]:
+
     img_url: str | None = None
 
     if image and image.filename:  # type: ignore
@@ -57,7 +63,10 @@ async def write_diary(
         print(e)
         raise HTTPException(status_code=404, detail=str(e))
 
-    return 201, {"message": "일기 작성을 성공적으로 마쳤습니다", "status": "success"}
+    return 201, {
+        "message": "Your diary entry has been successfully created.",
+        "status": "success",
+    }
 
 
 @router.get(
@@ -70,11 +79,16 @@ async def diary_list(
     user_id: int = Depends(authenticate),
     diary_repo: DiaryReqository = Depends(),
 ) -> DiaryListResponse:
+
     diaries = await diary_repo.get_diary_list(user_id)
+
     if not diaries:
         raise HTTPException(
             status_code=status.HTTP_200_OK,
-            detail={"message": "작성된 일기가 없습니다", "status": "success"},
+            detail={
+                "message": "You haven't written any diary entries yet.",
+                "status": "success",
+            },
         )
 
     return DiaryListResponse.build(diaries=list(diaries))
@@ -83,20 +97,53 @@ async def diary_list(
 @router.get(
     path="/{diary_id}",
     summary="일기(1개) 조회",
-    response_model=DiaryDetailResponse,
     status_code=status.HTTP_200_OK,
+    response_model=DiaryDetailResponse,
 )
 async def diary_detail(
     diary_id: int = Path(..., description="조회할 일기의 고유 식별자"),
     user_id: int = Depends(authenticate),
     diary_repo: DiaryReqository = Depends(),
 ) -> Diary:
-    if not (
-        diary := await diary_repo.get_diary_detail(diary_id=diary_id, user_id=user_id)
-    ):
+
+    if not (diary := await diary_repo.get_diary_detail(diary_id=diary_id)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Diary doesn't exist",
+            detail="The requested diary entry could not be found.",
         )
 
-    return DiaryDetailResponse.model_validate(obj=diary)
+    if diary.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only access your own diary entries.",
+        )
+
+    return DiaryDetailResponse.model_validate(diary)
+
+
+@router.delete(
+    path="/{diary_id}",
+    summary="선택한 일기 삭제",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
+)
+async def delete_diary(
+    diary_id: int,
+    user_id: int = Depends(authenticate),
+    diary_repo: DiaryReqository = Depends(),
+) -> tuple[int, dict[str, str]]:
+
+    if not (diary := await diary_repo.get_diary_detail(diary_id=diary_id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The requested diary entry could not be found.",
+        )
+
+    if diary.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only access your own diary entries.",
+        )
+
+    await diary_repo.delete(diary)
+    return 204, {"message": "Diary entry successfully deleted.", "status": "success"}
