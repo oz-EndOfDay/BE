@@ -12,7 +12,7 @@ from src.config.database.connection import get_async_session
 from src.user.models import User
 from src.user.repository import UserNotFoundException, UserRepository
 from src.user.schema.request import CreateRequestBody, UpdateRequestBody
-from src.user.schema.response import JWTResponse, UserMeResponse
+from src.user.schema.response import JWTResponse, UserMeDetailResponse, UserMeResponse
 from src.user.service.authentication import (
     ALGORITHM,
     authenticate,
@@ -28,8 +28,11 @@ settings = Settings()
 
 router = APIRouter(prefix="/users", tags=["User"])
 
+
 # 유저 생성 (회원가입)
-@router.post("/", response_model=UserMeResponse, status_code=201)
+@router.post(
+    "/", summary="회원 가입(유저생성)", response_model=UserMeResponse, status_code=201
+)
 async def create_user(
     user_data: CreateRequestBody, session: AsyncSession = Depends(get_async_session)
 ) -> UserMeResponse:
@@ -60,8 +63,37 @@ async def create_user(
         nickname=created_user.nickname,
     )
 
+
+@router.get(
+    "/",
+    summary="로그인한 유저 상세 정보 가져오기",
+    response_model=UserMeDetailResponse,
+    status_code=200,
+)
+async def get_users(
+    user_id: int = Depends(authenticate),  # 인증된 사용자 ID
+    session: AsyncSession = Depends(get_async_session),
+) -> UserMeDetailResponse:
+    user_repo = UserRepository(session)
+
+    user = await user_repo.get_user_by_id(user_id)
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return UserMeDetailResponse(
+        id=user.id,
+        name=user.name,
+        nickname=user.nickname,
+        email=user.email,
+        introduce=user.introduce,
+        img_url=user.img_url,
+        created_at=user.created_at,
+    )
+
+
 # 패스워드 분실
-@router.get("/forgot_password")
+@router.get("/forgot_password", summary="패스워드 분실 시 임시 비밀번호 발급")
 async def forgot_password(
     email: str, session: AsyncSession = Depends(get_async_session)
 ) -> Dict[str, str]:
@@ -79,7 +111,7 @@ async def forgot_password(
 
 
 # 회원가입 이메일 인증
-@router.get("/email_verify/{token}")
+@router.get("/email_verify/{token}", summary="올바른(실제 사용중) 이메일 검증")
 async def verify_email(
     token: str, session: AsyncSession = Depends(get_async_session)
 ) -> Dict[str, str]:
@@ -114,6 +146,7 @@ async def verify_email(
 # 로그인 엔드포인트 구현 (비동기)
 @router.post(
     "/login",
+    summary="로그인",
     response_model=JWTResponse,
     status_code=status.HTTP_200_OK,
 )
@@ -151,8 +184,9 @@ async def login_handler(
         detail="User not found",
     )
 
+
 # 로그아웃 엔드포인트
-@router.post("/logout", status_code=status.HTTP_200_OK)
+@router.post("/logout", summary="로그아웃", status_code=status.HTTP_200_OK)
 async def logout_handler(request: Request) -> Dict[str, str]:
     try:
         access_token = request.cookies.get("access_token")
@@ -178,8 +212,14 @@ async def logout_handler(request: Request) -> Dict[str, str]:
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
 
+
 # 사용자 정보 수정
-@router.put(path="/", status_code=status.HTTP_200_OK, response_model=UserMeResponse)
+@router.put(
+    path="/",
+    summary="회원 정보 수정",
+    status_code=status.HTTP_200_OK,
+    response_model=UserMeResponse,
+)
 async def update_user(
     user_data: UpdateRequestBody,  # 사용자 수정 데이터에 대한 Pydantic 모델
     user_id: int = Depends(authenticate),  # 인증된 사용자 ID
@@ -202,7 +242,9 @@ async def update_user(
 
 
 # soft delete 방식으로 삭제 일자를 db에 입력 후 7일 지난 데이터는 안보이도록 함.
-@router.delete(path="/delete", status_code=status.HTTP_200_OK)
+@router.delete(
+    path="/delete", summary="회원 탈퇴(Soft Delete)", status_code=status.HTTP_200_OK
+)
 async def delete_user(
     user_id: int = Depends(authenticate),
     session: AsyncSession = Depends(get_async_session),

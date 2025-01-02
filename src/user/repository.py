@@ -30,9 +30,6 @@ class UserRepository:
         result = await self.session.execute(stmt)
         user = result.scalar_one_or_none()
 
-        if user is None:
-            raise UserNotFoundException(f"User with id {user_id} not found")
-
         return user
 
     # 이메일로 사용자 조회
@@ -71,7 +68,6 @@ class UserRepository:
         await self.session.commit()
         return user
         #
-
 
     # 회원 탈퇴 소프트 딜리트
     async def soft_delete_user(self, user_id: int) -> None:
