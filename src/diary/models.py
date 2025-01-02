@@ -2,9 +2,9 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import Column, Date, DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.database.orm import Base
-from user.models import User
 
 
 class WeatherEnum(str, PyEnum):
@@ -36,6 +36,14 @@ class Diary(Base):
     img_url = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.now)
     deleted_at = Column(DateTime, nullable=True)
+
+    async def soft_delete(self, session: AsyncSession) -> None:
+        self.deleted_at = datetime.now()  # type: ignore
+        await session.commit()
+
+    async def restore(self, session: AsyncSession) -> None:
+        self.deleted_at = None  # type: ignore
+        await session.commit()
 
     @classmethod
     async def create(

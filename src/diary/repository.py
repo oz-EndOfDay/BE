@@ -20,6 +20,7 @@ class DiaryReqository:
         query = (
             select(Diary)
             .where(Diary.user_id == user_id)
+            .where(Diary.deleted_at.is_(None))  # 삭제되지 않은 일기만 검색
             .order_by(Diary.created_at.desc())
         )
         result = await self.session.execute(query)
@@ -27,11 +28,23 @@ class DiaryReqository:
         return diaries or None
 
     async def get_diary_detail(self, diary_id: int) -> Diary:
-        query = select(Diary).where(Diary.id == diary_id)
+        query = (
+            select(Diary).where(Diary.id == diary_id)
+            # .where(Diary.deleted_at.is_(None))      # 삭제되지 않은 일기만 검색
+        )
         result = await self.session.execute(query)
         diary = result.scalars().first()
         return diary
 
     async def delete(self, diary: Diary) -> None:
-        await self.session.delete(diary)
-        await self.session.commit()
+        await diary.soft_delete(self.session)
+
+    async def restore_diary(self, diary_id: int) -> Diary | None:
+        query = select(Diary).where(Diary.id == diary_id)
+        result = await self.session.execute(query)
+        diary = result.scalars().first()
+
+        if diary and diary.deleted_at:
+            await diary.restore(self.session)
+            return diary
+        return None

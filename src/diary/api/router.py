@@ -14,7 +14,7 @@ from fastapi import (
 )
 
 from diary.models import Diary, MoodEnum, WeatherEnum
-from diary.reqository import DiaryReqository
+from diary.repository import DiaryReqository
 from diary.schema.response import DiaryDetailResponse, DiaryListResponse
 from user.service.authentication import authenticate
 
@@ -75,7 +75,7 @@ async def write_diary(
     status_code=status.HTTP_200_OK,
     response_model=DiaryListResponse,
 )
-async def diary_list(
+async def diary_list(  # 소프트 삭제된 일기는 불러오지 않도록 변경이 필요함, 삭제를 복구하는 api도 필요하겠네..
     user_id: int = Depends(authenticate),
     diary_repo: DiaryReqository = Depends(),
 ) -> DiaryListResponse:
