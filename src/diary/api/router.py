@@ -81,7 +81,10 @@ async def diary_list(
 
 
 @router.get(
-    path="/{diary_id}", summary="일기(1개) 조회", status_code=status.HTTP_200_OK
+    path="/{diary_id}",
+    summary="일기(1개) 조회",
+    response_model=DiaryDetailResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def diary_detail(
     diary_id: int = Path(..., description="조회할 일기의 고유 식별자"),
