@@ -23,7 +23,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # 비밀번호 해싱 함수
 def hash_password(password: str) -> str:
-    print("해쉬 password:" + pwd_context.hash(password))
     return cast(str, pwd_context.hash(password))
 
 

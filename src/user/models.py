@@ -21,7 +21,9 @@ class User(Base):
     password = Column(String, nullable=False)
     img_url = Column(String)
     created_at = Column(DateTime, default=datetime.now)
-    modified_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    modified_at = Column(
+        DateTime(timezone=True), default=datetime.now, onupdate=datetime.now
+    )
     deleted_at = Column(DateTime)
     is_active = Column(Boolean, default=False)
 
@@ -36,7 +38,6 @@ class User(Base):
             raise ValueError("Password must be plain text")
 
         hashed_password = hash_password(password)
-        print("회원가입시 생성된 비밀번호:" + hashed_password)
         return cls(name=name, nickname=nickname, email=email, password=hashed_password)
 
 
