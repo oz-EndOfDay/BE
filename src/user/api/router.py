@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Dict
+
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from jose import JWTError
@@ -275,6 +276,8 @@ async def recovery_possible(
 
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
+    if user.email is None:
+        raise HTTPException(status_code=404, detail="User email is not available")
     if user.is_active:
         raise HTTPException(status_code=403, detail="Account is active")
     if user.deleted_at and user.deleted_at < datetime.now() - timedelta(days=7):
@@ -306,7 +309,7 @@ async def recovery_account(
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("email")
-        print(f'사용자의 이메일은 {email}')
+        print(f"사용자의 이메일은 {email}")
 
         if email is None:
             raise HTTPException(status_code=400, detail="Invalid token")
