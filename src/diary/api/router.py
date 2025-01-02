@@ -2,17 +2,26 @@ import os
 import shutil
 from datetime import date
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Path,
+    UploadFile,
+    status,
+)
 
 from diary.models import Diary, MoodEnum, WeatherEnum
 from diary.reqository import DiaryReqository
-from diary.schema.response import DiaryListResponse
+from diary.schema.response import DiaryDetailResponse, DiaryListResponse
 from user.service.authentication import authenticate
 
 router = APIRouter(prefix="/diary", tags=["Diary"])
 
 
-@router.post(path="", status_code=status.HTTP_201_CREATED)
+@router.post(path="", summary="일기 작성", status_code=status.HTTP_201_CREATED)
 async def write_diary(
     user_id: int = Depends(authenticate),
     title: str = Form(...),
@@ -51,11 +60,16 @@ async def write_diary(
     return 201, {"message": "일기 작성을 성공적으로 마쳤습니다", "status": "success"}
 
 
-@router.get(path="", status_code=status.HTTP_200_OK, response_model=DiaryListResponse)
+@router.get(
+    path="",
+    summary="전체 일기 조회",
+    status_code=status.HTTP_200_OK,
+    response_model=DiaryListResponse,
+)
 async def diary_list(
     user_id: int = Depends(authenticate),
     diary_repo: DiaryReqository = Depends(),
-) -> tuple[int, DiaryListResponse]:
+) -> DiaryListResponse:
     diaries = await diary_repo.get_diary_list(user_id)
     if not diaries:
         raise HTTPException(
@@ -63,4 +77,23 @@ async def diary_list(
             detail={"message": "작성된 일기가 없습니다", "status": "success"},
         )
 
-    return 200, DiaryListResponse.build(diaries=list(diaries))
+    return DiaryListResponse.build(diaries=list(diaries))
+
+
+@router.get(
+    path="/{diary_id}", summary="일기(1개) 조회", status_code=status.HTTP_200_OK
+)
+async def diary_detail(
+    diary_id: int = Path(..., description="조회할 일기의 고유 식별자"),
+    user_id: int = Depends(authenticate),
+    diary_repo: DiaryReqository = Depends(),
+) -> Diary:
+    if not (
+        diary := await diary_repo.get_diary_detail(diary_id=diary_id, user_id=user_id)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Diary doesn't exist",
+        )
+
+    return DiaryDetailResponse.model_validate(obj=diary)

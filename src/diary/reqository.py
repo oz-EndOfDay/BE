@@ -25,3 +25,9 @@ class DiaryReqository:
         result = await self.session.execute(query)
         diaries = result.scalars().all()
         return diaries or None
+
+    async def get_diary_detail(self, diary_id: int, user_id: int) -> Diary:
+        query = select(Diary).where(Diary.id == diary_id, Diary.user_id == user_id)
+        result = await self.session.execute(query)
+        diary = result.scalars().first()
+        return diary
