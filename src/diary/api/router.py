@@ -76,7 +76,7 @@ async def write_diary(
     }
 
 
-# 삭제 일기(7일 이내) 복구 api 필요, 사진 삭제 로직 필요
+# S3 사진 업로드 기능, 사진 삭제 로직 필요
 
 
 @router.get(
