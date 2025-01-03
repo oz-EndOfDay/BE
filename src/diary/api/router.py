@@ -1,6 +1,7 @@
 import os
 import shutil
 from datetime import date
+from typing import Optional
 
 from fastapi import (
     APIRouter,
@@ -9,13 +10,14 @@ from fastapi import (
     Form,
     HTTPException,
     Path,
+    Query,
     UploadFile,
     status,
 )
 from fastapi_pagination import Page, Params
 
 from diary.models import Diary, MoodEnum, WeatherEnum
-from diary.repository import DiaryReqository
+from diary.repository import DiaryRepository
 from diary.schema.response import (
     DiaryBriefResponse,
     DiaryDetailResponse,
@@ -40,7 +42,7 @@ async def write_diary(
     mood: MoodEnum = Form(...),
     content: str = Form(...),
     image: UploadFile | str = File(default=None),
-    diary_repo: DiaryReqository = Depends(),
+    diary_repo: DiaryRepository = Depends(),
 ) -> tuple[int, dict[str, str]]:
 
     img_url: str | None = None
@@ -74,28 +76,32 @@ async def write_diary(
     }
 
 
-# 삭제 일기(7일 이내) 복구 api 필요, 사진 삭제 로직 필요, 제목/내용 및 년도/월 검색 기능 필요
+# 삭제 일기(7일 이내) 복구 api 필요, 사진 삭제 로직 필요
 
 
 @router.get(
     path="",
-    summary="전체 일기 조회",
+    summary="일기 검색 및 조회",
     status_code=status.HTTP_200_OK,
     response_model=Page[DiaryBriefResponse],
 )
 async def diary_list(
     user_id: int = Depends(authenticate),
-    diary_repo: DiaryReqository = Depends(),
     params: Params = Depends(),
+    word: Optional[str] = Query(None, description="검색 키워드"),
+    year: Optional[int] = Query(None, description="검색 연도"),
+    month: Optional[int] = Query(None, description="검색 월"),
+    diary_repo: DiaryRepository = Depends(),
 ) -> Page[DiaryBriefResponse]:
+    diaries = await diary_repo.get_diary_list(
+        user_id, params, word=word, year=year, month=month
+    )
 
-    diaries = await diary_repo.get_diary_list(user_id, params)
-
-    if not diaries:
+    if not diaries.items:
         raise HTTPException(
             status_code=status.HTTP_200_OK,
             detail={
-                "message": "You haven't written any diary entries yet.",
+                "message": "검색 결과가 없습니다.",
                 "status": "success",
             },
         )
@@ -112,7 +118,7 @@ async def diary_list(
 )
 async def diary_list_deleted(
     user_id: int = Depends(authenticate),
-    diary_repo: DiaryReqository = Depends(),
+    diary_repo: DiaryRepository = Depends(),
 ) -> DiaryListResponse:
 
     diaries = await diary_repo.get_deleted_diary_list(user_id)
@@ -138,7 +144,7 @@ async def diary_list_deleted(
 async def diary_detail(
     diary_id: int = Path(..., description="조회할 일기의 고유 식별자"),
     user_id: int = Depends(authenticate),
-    diary_repo: DiaryReqository = Depends(),
+    diary_repo: DiaryRepository = Depends(),
 ) -> Diary:
 
     if not (diary := await diary_repo.get_diary_detail(diary_id=diary_id)):
@@ -165,7 +171,7 @@ async def diary_detail(
 async def delete_diary(
     diary_id: int,
     user_id: int = Depends(authenticate),
-    diary_repo: DiaryReqository = Depends(),
+    diary_repo: DiaryRepository = Depends(),
 ) -> tuple[int, dict[str, str]]:
 
     if not (diary := await diary_repo.get_diary_detail(diary_id=diary_id)):
