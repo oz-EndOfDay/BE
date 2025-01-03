@@ -3,6 +3,7 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
+from fastapi_pagination import add_pagination
 
 # 데이터베이스 관련 모듈
 from config.database.connection import async_engine
@@ -28,6 +29,7 @@ app = FastAPI(lifespan=lifespan)
 # 라우터 포함
 app.include_router(user_router)
 app.include_router(diary_router)
+add_pagination(app)
 
 
 # 기본 루트 핸들러

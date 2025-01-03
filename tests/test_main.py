@@ -1,7 +1,6 @@
 from fastapi.testclient import TestClient
 
 from config import Settings
-from config.database.connection import async_engine
 from main import app
 
 client = TestClient(app)
