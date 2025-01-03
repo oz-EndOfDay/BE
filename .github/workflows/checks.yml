@@ -55,6 +55,7 @@ jobs:
           REDIS_PORT: ${{ secrets.REDIS_PORT }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
         run: poetry run pytest tests/
 
       - name: Start server

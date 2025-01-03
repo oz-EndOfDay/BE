@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from diary.models import Diary
 
@@ -27,3 +27,16 @@ class DiaryListResponse(BaseModel):
     @classmethod
     def build(cls, diaries: list[Diary]) -> "DiaryListResponse":
         return cls(diaries=[DiaryBriefResponse.build(diary=d) for d in diaries])
+
+
+class DiaryDetailResponse(BaseModel):
+    id: int
+    title: str
+    write_date: date
+    weather: str
+    mood: str
+    content: str
+    img_url: str
+
+    class Config:
+        from_attributes = True
