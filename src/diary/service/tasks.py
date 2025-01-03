@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from celery import shared_task
 from celery.schedules import crontab
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.database.connection import AsyncSessionFactory
@@ -19,18 +19,12 @@ async def delete_expired_diaries_task() -> None:
 async def delete_expired_diaries(session: AsyncSession) -> None:
     seven_days_ago = datetime.now() - timedelta(days=7)
 
-    # 7일이 지난 삭제 예정 일기 찾기
-    query = select(Diary).where(
-        Diary.deleted_at.isnot(None), Diary.deleted_at <= seven_days_ago
+    # 대량 삭제로 변경
+    await session.execute(
+        delete(Diary).where(
+            Diary.deleted_at.isnot(None), Diary.deleted_at <= seven_days_ago
+        )
     )
-
-    result = await session.execute(query)
-    expired_diaries = result.scalars().all()
-
-    # 실제 데이터베이스에서 삭제
-    for diary in expired_diaries:
-        await session.delete(diary)
-
     await session.commit()
 
 
