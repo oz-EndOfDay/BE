@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Dict
 
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,7 +32,7 @@ router = APIRouter(prefix="/users", tags=["User"])
 
 @router.post("/", response_model=UserMeResponse, status_code=201)
 async def create_user(
-    user_data: CreateRequestBody, session: AsyncSession = Depends(get_async_session)
+    request: Request, user_data: CreateRequestBody, session: AsyncSession = Depends(get_async_session)
 ) -> UserMeResponse:
     user_repo = UserRepository(session)  # UserRepository 인스턴스 생성
 
@@ -49,7 +49,7 @@ async def create_user(
     # 인증 토큰 생성
     token = create_verification_token(user_data.email)
     # 인증 링크 생성
-    verification_link = f"http://localhost:8000/users/email_verify/{token}"
+    verification_link = f"{request.base_url}users/email_verify/{token}"
 
     await send_email(
         to=user_data.email,
