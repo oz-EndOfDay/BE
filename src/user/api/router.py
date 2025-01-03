@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Dict
 
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,7 +32,9 @@ router = APIRouter(prefix="/users", tags=["User"])
 
 @router.post("/", response_model=UserMeResponse, status_code=201)
 async def create_user(
-    request: Request, user_data: CreateRequestBody, session: AsyncSession = Depends(get_async_session)
+    request: Request,
+    user_data: CreateRequestBody,
+    session: AsyncSession = Depends(get_async_session),
 ) -> UserMeResponse:
     user_repo = UserRepository(session)  # UserRepository 인스턴스 생성
 
