@@ -81,7 +81,7 @@ async def write_diary(
 
 @router.get(
     path="",
-    summary="일기 검색 및 조회",
+    summary="전체 일기 검색 및 조회",
     status_code=status.HTTP_200_OK,
     response_model=Page[DiaryBriefResponse],
 )
@@ -137,7 +137,7 @@ async def diary_list_deleted(
 
 @router.get(
     path="/{diary_id}",
-    summary="일기(1개) 조회",
+    summary="선택한 일기(1개) 조회",
     status_code=status.HTTP_200_OK,
     response_model=DiaryDetailResponse,
 )
@@ -188,3 +188,20 @@ async def delete_diary(
 
     await diary_repo.delete(diary)
     return 204, {"message": "Diary entry successfully deleted.", "status": "success"}
+
+
+@router.patch("/{diary_id}/restore", response_model=DiaryDetailResponse)
+async def restore_diary(
+    diary_id: int,
+    user_id: int = Depends(authenticate),
+    diary_repo: DiaryRepository = Depends(),
+) -> Diary:
+    restored_diary = await diary_repo.restore_diary(diary_id=diary_id, user_id=user_id)
+
+    if not restored_diary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Diary not found or cannot be restored",
+        )
+
+    return DiaryDetailResponse.model_validate(restored_diary)

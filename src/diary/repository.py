@@ -100,12 +100,17 @@ class DiaryRepository:
     async def delete(self, diary: Diary) -> None:
         await diary.soft_delete(self.session)
 
-    async def restore_diary(self, diary_id: int) -> Diary | None:
-        query = select(Diary).where(Diary.id == diary_id)
+    async def restore_diary(self, diary_id: int, user_id: int) -> Diary | None:
+        query = (
+            select(Diary)
+            .where(Diary.id == diary_id)
+            .where(Diary.user_id == user_id)  # 사용자 검증 추가
+            .where(Diary.deleted_at.is_not(None))  # 삭제된 일기만 복구 가능
+        )
         result = await self.session.execute(query)
         diary = result.scalars().first()
 
-        if diary and diary.deleted_at:
+        if diary:
             await diary.restore(self.session)
             return diary
         return None
