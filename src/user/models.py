@@ -1,8 +1,9 @@
 import re
 from datetime import datetime
-from typing import Type, TypeVar
+from typing import Optional, Type, TypeVar
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import DateTime as SQLDateTime
 
@@ -14,18 +15,32 @@ T = TypeVar("T", bound="User")  # Generic type variable for the class method
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = {"extend_existing": True}
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    nickname = Column(String, unique=True, index=True, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
-    introduce = Column(String)
-    password = Column(String, nullable=False)
-    img_url = Column(String)
-    created_at = Column(DateTime, default=datetime.now)
-    modified_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
-    deleted_at = Column(SQLDateTime, nullable=True)
-    is_active = Column(Boolean, default=False)
+    # id = Column(Integer, primary_key=True, index=True)
+    # name = Column(String, nullable=False)
+    # nickname = Column(String, unique=True, index=True, nullable=False)
+    # email = Column(String, unique=True, index=True, nullable=False)
+    # introduce = Column(String)
+    # password = Column(String, nullable=False)
+    # img_url = Column(String)
+    # created_at = Column(DateTime, default=datetime.now)
+    # modified_at = Column(
+    #     DateTime(timezone=True), default=datetime.now, onupdate=datetime.now
+    # )
+    # deleted_at = Column(DateTime)
+    # is_active = Column(Boolean, default=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[Optional[str]] = mapped_column(nullable=True)
+    nickname: Mapped[Optional[str]] = mapped_column(nullable=True)
+    email: Mapped[str]
+    password: Mapped[str]
+    img_url: Mapped[Optional[str]] = mapped_column(nullable=True)
+    introduce: Mapped[Optional[str]] = mapped_column(nullable=True)
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime]
+    modified_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 
     diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")
 
