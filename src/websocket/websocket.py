@@ -3,7 +3,7 @@ from typing import Dict
 from fastapi import Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.database.connection_async import get_async_session
+from src.config.database.connection_async import get_db
 from src.websocket.crud import create_message
 from src.websocket.repository import ChatRepository
 from src.websocket.schemas import MessageCreate
@@ -30,7 +30,7 @@ manager = ConnectionManager()
 
 
 async def websocket_endpoint(
-    websocket: WebSocket, user_id: int, db: AsyncSession = Depends(get_async_session)
+    websocket: WebSocket, user_id: int, db: AsyncSession = Depends(get_db)
 ) -> None:
     await manager.connect(user_id, websocket)
     try:

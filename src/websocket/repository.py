@@ -4,12 +4,12 @@ from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.database.connection_async import get_async_session
+from src.config.database.connection_async import get_db
 from src.websocket.models import Message
 
 
 class ChatRepository:
-    def __init__(self, session: AsyncSession = Depends(get_async_session)):
+    def __init__(self, session: AsyncSession = Depends(get_db)):
         self.session = session
 
     async def save(self, message: Message) -> None:

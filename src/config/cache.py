@@ -1,6 +1,8 @@
 from redis import Redis
 
-from config import settings
+from src.config import Settings
+
+settings = Settings()
 
 redis_client = Redis(
     host=settings.redis_host,

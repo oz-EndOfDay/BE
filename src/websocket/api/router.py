@@ -1,11 +1,12 @@
 from typing import Dict
 
-from app.auth import get_current_user
-from app.database import get_db
-from app.models import Message
-from app.schemas import MessageCreate
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
+
+from src.config.database.connection_async import get_db
+from src.websocket.api.auth import get_current_user
+from src.websocket.models import Message
+from src.websocket.schemas import MessageCreate
 
 router = APIRouter()
 
@@ -58,12 +59,12 @@ async def send_message(
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     new_message = Message.create(
-        user_id=current_user, friend_id=message.recipient_id, content=message.content
+        user_id=current_user, friend_id=message.friend_id, content=message.content
     )
     db.add(new_message)
     db.commit()
 
     await manager.send_personal_message(
-        f"{current_user}: {message.content}", str(message.recipient_id)
+        f"{current_user}: {message.content}", str(message.friend_id)
     )
     return {"status": "success", "message": "Message sent"}

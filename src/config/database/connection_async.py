@@ -11,9 +11,9 @@ AsyncSessionFactory = async_sessionmaker(
 )
 
 
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
-    session = AsyncSessionFactory()
-    try:
-        yield session
-    finally:
-        await session.close()  # db에 커넥션 종료
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSessionFactory() as session:
+        try:
+            yield session
+        finally:
+            await session.close()  # db에 커넥션 종료
