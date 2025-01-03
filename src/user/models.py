@@ -4,8 +4,8 @@ from typing import Type, TypeVar
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
-from src.config.database.orm import Base
-from src.user.service.authentication import hash_password
+from config.database.orm import Base
+from user.service.authentication import hash_password
 
 T = TypeVar("T", bound="User")  # Generic type variable for the class method
 
