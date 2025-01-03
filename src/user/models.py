@@ -38,6 +38,7 @@ class User(Base):
             raise ValueError("Password must be plain text")
 
         hashed_password = hash_password(password)
+        print("회원가입시 생성된 비밀번호:" + hashed_password)
         return cls(name=name, nickname=nickname, email=email, password=hashed_password)
 
 
