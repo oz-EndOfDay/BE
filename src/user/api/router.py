@@ -4,16 +4,17 @@ from typing import Dict
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from jose import JWTError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from blacklist import blacklist_token
-from src.config import Settings
-from src.config.database.connection import get_async_session
-from src.user.models import User
-from src.user.repository import UserNotFoundException, UserRepository
-from src.user.schema.request import CreateRequestBody, UpdateRequestBody
-from src.user.schema.response import JWTResponse, UserMeDetailResponse, UserMeResponse
-from src.user.service.authentication import (
+from config import Settings
+from config.database.connection import get_async_session
+from user.models import User
+from user.repository import UserNotFoundException, UserRepository
+from user.schema.request import CreateRequestBody, UpdateRequestBody
+from user.schema.response import JWTResponse, UserMeDetailResponse, UserMeResponse
+from user.service.authentication import (
     ALGORITHM,
     authenticate,
     create_verification_token,
@@ -22,7 +23,7 @@ from src.user.service.authentication import (
     hash_password,
     verify_password,
 )
-from src.user.service.smtp import send_email
+from user.service.smtp import send_email
 
 settings = Settings()
 
@@ -34,7 +35,9 @@ router = APIRouter(prefix="/users", tags=["User"])
     "/", summary="회원 가입(유저생성)", response_model=UserMeResponse, status_code=201
 )
 async def create_user(
-    user_data: CreateRequestBody, session: AsyncSession = Depends(get_async_session)
+    request: Request,
+    user_data: CreateRequestBody,
+    session: AsyncSession = Depends(get_async_session),
 ) -> UserMeResponse:
     user_repo = UserRepository(session)  # UserRepository 인스턴스 생성
 
@@ -49,7 +52,7 @@ async def create_user(
     # 인증 토큰 생성
     token = create_verification_token(user_data.email)
     # 인증 링크 생성
-    verification_link = f"http://localhost:8000/users/email_verify/{token}"
+    verification_link = f"{request.base_url}users/email_verify/{token}"
 
     await send_email(
         to=user_data.email,

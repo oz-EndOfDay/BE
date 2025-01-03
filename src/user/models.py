@@ -3,7 +3,8 @@ from datetime import datetime
 from typing import Optional, Type, TypeVar
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import DateTime as SQLDateTime
 
 from config.database.orm import Base
 from user.service.authentication import hash_password
@@ -28,17 +29,23 @@ class User(Base):
     # )
     # deleted_at = Column(DateTime)
     # is_active = Column(Boolean, default=False)
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[Optional[str]] = mapped_column(nullable=True)
-    nickname: Mapped[Optional[str]] = mapped_column(nullable=True)
-    email: Mapped[str]
-    password: Mapped[str]
-    img_url: Mapped[Optional[str]] = mapped_column(nullable=True)
-    introduce: Mapped[Optional[str]] = mapped_column(nullable=True)
-    is_active: Mapped[bool] = mapped_column(default=True)
-    created_at: Mapped[datetime]
-    modified_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    nickname: Mapped[str] = mapped_column(
+        String, unique=True, index=True, nullable=False
+    )
+    email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    introduce: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    password: Mapped[str] = mapped_column(String, nullable=False)
+    img_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    modified_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.now, onupdate=datetime.now
+    )
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")
 
     @staticmethod
     def _is_bcrypt_pattern(password: str) -> bool:
