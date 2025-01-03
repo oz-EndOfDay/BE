@@ -12,10 +12,15 @@ from fastapi import (
     UploadFile,
     status,
 )
+from fastapi_pagination import Page, Params
 
 from diary.models import Diary, MoodEnum, WeatherEnum
 from diary.repository import DiaryReqository
-from diary.schema.response import DiaryDetailResponse, DiaryListResponse
+from diary.schema.response import (
+    DiaryBriefResponse,
+    DiaryDetailResponse,
+    DiaryListResponse,
+)
 from user.service.authentication import authenticate
 
 router = APIRouter(prefix="/diary", tags=["Diary"])
@@ -69,18 +74,22 @@ async def write_diary(
     }
 
 
+# 삭제 일기(7일 이내) 복구 api 필요, 사진 삭제 로직 필요, 제목/내용 및 년도/월 검색 기능 필요
+
+
 @router.get(
     path="",
     summary="전체 일기 조회",
     status_code=status.HTTP_200_OK,
-    response_model=DiaryListResponse,
+    response_model=Page[DiaryBriefResponse],
 )
-async def diary_list(  # 삭제 일기(7일 이내) 복구 api 필요, 사진 삭제 로직 필요, 유저 삭제 시 같이 삭제 필요, 제목/내용 및 년도/월 검색 기능 필요
+async def diary_list(
     user_id: int = Depends(authenticate),
     diary_repo: DiaryReqository = Depends(),
-) -> DiaryListResponse:
+    params: Params = Depends(),
+) -> Page[DiaryBriefResponse]:
 
-    diaries = await diary_repo.get_diary_list(user_id)
+    diaries = await diary_repo.get_diary_list(user_id, params)
 
     if not diaries:
         raise HTTPException(
@@ -91,7 +100,8 @@ async def diary_list(  # 삭제 일기(7일 이내) 복구 api 필요, 사진 �
             },
         )
 
-    return DiaryListResponse.build(diaries=list(diaries))
+    return diaries  # type: ignore
+    # return DiaryListResponse.build(diaries=list(diaries))
 
 
 @router.get(

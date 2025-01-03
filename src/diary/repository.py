@@ -1,6 +1,8 @@
 from typing import Sequence
 
 from fastapi import Depends
+from fastapi_pagination import Page, Params
+from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,16 +18,27 @@ class DiaryReqository:
         self.session.add(diary)
         await self.session.commit()
 
-    async def get_diary_list(self, user_id: int) -> Sequence[Diary] | None:
+    # async def get_diary_list(self, user_id: int) -> Sequence[Diary] | None:
+    #     query = (
+    #         select(Diary)
+    #         .where(Diary.user_id == user_id)
+    #         .where(Diary.deleted_at.is_(None))  # 삭제되지 않은 일기만 검색
+    #         .order_by(Diary.created_at.desc())
+    #     )
+    #     result = await self.session.execute(query)
+    #     diaries = result.scalars().all()
+    #     return diaries or None
+    async def get_diary_list(
+        self, user_id: int, params: Params = Depends()
+    ) -> Page[Diary]:
         query = (
             select(Diary)
             .where(Diary.user_id == user_id)
             .where(Diary.deleted_at.is_(None))  # 삭제되지 않은 일기만 검색
             .order_by(Diary.created_at.desc())
         )
-        result = await self.session.execute(query)
-        diaries = result.scalars().all()
-        return diaries or None
+
+        return await paginate(self.session, query)  # type: ignore
 
     async def get_deleted_diary_list(self, user_id: int) -> Sequence[Diary] | None:
         query = (
