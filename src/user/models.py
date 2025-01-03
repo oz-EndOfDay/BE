@@ -27,9 +27,7 @@ class User(Base):
     deleted_at = Column(SQLDateTime, nullable=True)
     is_active = Column(Boolean, default=False)
 
-    diaries = relationship("Diary",
-                           back_populates="user",
-                           cascade="all, delete-orphan")
+    diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")
 
     @staticmethod
     def _is_bcrypt_pattern(password: str) -> bool:

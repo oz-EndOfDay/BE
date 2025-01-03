@@ -93,6 +93,7 @@ async def diary_list(  # 삭제 일기(7일 이내) 복구 api 필요, 사진 �
 
     return DiaryListResponse.build(diaries=list(diaries))
 
+
 @router.get(
     path="/deleted",
     summary="삭제된 일기(7일 이내) 확인",
@@ -116,6 +117,7 @@ async def diary_list_deleted(
         )
 
     return DiaryListResponse.build(diaries=list(diaries))
+
 
 @router.get(
     path="/{diary_id}",
