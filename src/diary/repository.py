@@ -32,7 +32,7 @@ class DiaryReqository:
             select(Diary)
             .where(Diary.user_id == user_id)
             .where(Diary.deleted_at.is_not(None))  # 삭제 예정인 일기만 검색
-            .order_by(Diary.deleted_at.asc())
+            .order_by(Diary.deleted_at.desc())
         )
         result = await self.session.execute(query)
         diaries = result.scalars().all()

@@ -3,6 +3,7 @@ from enum import Enum as PyEnum
 
 from sqlalchemy import Column, Date, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import relationship
 
 from config.database.orm import Base
 
@@ -27,7 +28,8 @@ class Diary(Base):
     __tablename__ = "diaries"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    user = relationship("User", back_populates="diaries")
     title = Column(Text, nullable=False)
     write_date = Column(Date, nullable=False)
     weather: Column[Enum] = Column(Enum(WeatherEnum))

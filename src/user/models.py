@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Type, TypeVar
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy.orm import relationship
 from sqlalchemy.types import DateTime as SQLDateTime
 
 from config.database.orm import Base
@@ -25,6 +26,10 @@ class User(Base):
     modified_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     deleted_at = Column(SQLDateTime, nullable=True)
     is_active = Column(Boolean, default=False)
+
+    diaries = relationship("Diary",
+                           back_populates="user",
+                           cascade="all, delete-orphan")
 
     @staticmethod
     def _is_bcrypt_pattern(password: str) -> bool:
