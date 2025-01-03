@@ -41,7 +41,7 @@ async def write_diary(
     img_url: str | None = None
 
     if image and image.filename:  # type: ignore
-        image_filename: str = f"{user_id}_{image.filename}"  # type: ignore
+        image_filename: str = f"{user_id}_diary_{image.filename}"  # type: ignore
         img_url = os.path.join("src/diary/img", image_filename)
 
         with open(img_url, "wb") as f:
@@ -75,7 +75,7 @@ async def write_diary(
     status_code=status.HTTP_200_OK,
     response_model=DiaryListResponse,
 )
-async def diary_list(  # 소프트 삭제된 일기는 불러오지 않도록 변경이 필요함, 삭제를 복구하는 api도 필요하겠네..
+async def diary_list(  # 삭제 일기(7일 이내) 복구 api 필요, 사진 삭제 로직 필요, 유저 삭제 시 같이 삭제 필요, 제목/내용 및 년도/월 검색 기능 필요
     user_id: int = Depends(authenticate),
     diary_repo: DiaryReqository = Depends(),
 ) -> DiaryListResponse:
@@ -93,6 +93,29 @@ async def diary_list(  # 소프트 삭제된 일기는 불러오지 않도록 �
 
     return DiaryListResponse.build(diaries=list(diaries))
 
+@router.get(
+    path="/deleted",
+    summary="삭제된 일기(7일 이내) 확인",
+    status_code=status.HTTP_200_OK,
+    response_model=DiaryListResponse,
+)
+async def diary_list_deleted(
+    user_id: int = Depends(authenticate),
+    diary_repo: DiaryReqository = Depends(),
+) -> DiaryListResponse:
+
+    diaries = await diary_repo.get_deleted_diary_list(user_id)
+
+    if not diaries:
+        raise HTTPException(
+            status_code=status.HTTP_200_OK,
+            detail={
+                "message": "You haven't deleted any diary entries yet.",
+                "status": "success",
+            },
+        )
+
+    return DiaryListResponse.build(diaries=list(diaries))
 
 @router.get(
     path="/{diary_id}",
