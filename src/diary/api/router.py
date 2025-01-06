@@ -111,9 +111,6 @@ async def write_diary(
     }
 
 
-# 사진 삭제 로직 필요
-
-
 @router.get(
     path="",
     summary="전체 일기 검색 및 조회",
