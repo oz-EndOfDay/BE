@@ -4,9 +4,9 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from diary.models import Diary
-from diary.service.tasks import delete_expired_diaries
-from user.models import User
+from src.diary.models import Diary
+from src.diary.service.tasks import delete_expired_diaries
+from src.user.models import User
 
 
 @pytest.mark.asyncio

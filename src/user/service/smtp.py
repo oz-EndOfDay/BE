@@ -1,7 +1,7 @@
 import smtplib
 from email.mime.text import MIMEText
 
-from config import Settings
+from src.config import Settings
 
 settings = Settings()
 

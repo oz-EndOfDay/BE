@@ -5,8 +5,8 @@ from celery.schedules import crontab
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config.database.connection import AsyncSessionFactory
-from diary.models import Diary
+from src.config.database.connection import AsyncSessionFactory
+from src.diary.models import Diary
 
 
 async def delete_expired_diaries_task() -> None:

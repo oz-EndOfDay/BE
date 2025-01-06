@@ -10,7 +10,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from passlib.context import CryptContext
 from starlette import status
 
-from config import Settings
+from src.config import Settings
 
 settings = Settings()
 

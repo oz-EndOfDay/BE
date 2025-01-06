@@ -4,7 +4,7 @@ import pytest
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from config.database.orm import Base
+from src.config.database.orm import Base
 
 load_dotenv(override=True)
 
