@@ -23,8 +23,6 @@ async def cleanup_deleted_users(session: AsyncSession) -> None:
     await session.commit()
 
 
-
-
 async def periodic_cleanup() -> None:
     while True:
         session_gen = get_async_session()
