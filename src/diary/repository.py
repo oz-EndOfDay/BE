@@ -6,8 +6,8 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import extract, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config.database.connection import get_async_session
-from diary.models import Diary
+from src.config.database.connection import get_async_session
+from src.diary.models import Diary
 
 
 class DiaryRepository:
@@ -88,7 +88,7 @@ class DiaryRepository:
         diaries = result.scalars().all()
         return diaries or None
 
-    async def get_diary_detail(self, diary_id: int) -> Diary:
+    async def get_diary_detail(self, diary_id: int) -> Diary | None:
         query = (
             select(Diary).where(Diary.id == diary_id)
             # .where(Diary.deleted_at.is_(None))      # 삭제되지 않은 일기만 검색

@@ -6,8 +6,8 @@ from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import DateTime as SQLDateTime
 
-from config.database.orm import Base
-from user.service.authentication import hash_password
+from src.config.database.orm import Base
+from src.user.service.authentication import hash_password
 
 T = TypeVar("T", bound="User")  # Generic type variable for the class method
 
@@ -45,7 +45,13 @@ class User(Base):
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")
+    diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")  # type: ignore
+
+    def __init__(self, name: str, nickname: str, email: str, password: str):
+        self.name = name
+        self.nickname = nickname
+        self.email = email
+        self.password = password
 
     @staticmethod
     def _is_bcrypt_pattern(password: str) -> bool:
