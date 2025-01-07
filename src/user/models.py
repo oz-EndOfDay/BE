@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import DateTime as SQLDateTime
 
 from src.config.database.orm import Base
+from src.friend.models import Friend  # test 코드 진행 시 Friend 모델을 찾지 못해 명시적으로 입력
 from src.user.service.authentication import hash_password
 
 T = TypeVar("T", bound="User")  # Generic type variable for the class method
@@ -33,8 +34,8 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
 
     diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")  # type: ignore
-    friends1 = relationship("Friend", back_populates="user1")  # type: ignore
-    friends2 = relationship("Friend", back_populates="user2")  # type: ignore
+    friends1 = relationship("Friend", foreign_keys="[Friend.user_id1]", primaryjoin="User.id == Friend.user_id1")  # type: ignore
+    friends2 = relationship("Friend", foreign_keys="[Friend.user_id2]", primaryjoin="User.id == Friend.user_id2")  # type: ignore
 
     def __init__(self, name: str, nickname: str, email: str, password: str):
         self.name = name
