@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
 from typing import Dict
 
+import httpx
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import RedirectResponse
 
 from blacklist import blacklist_token
 from src.config import Settings
@@ -214,6 +216,58 @@ async def logout_handler(request: Request) -> Dict[str, str]:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
+
+
+@router.get(
+    "/social/kakao/login",
+    status_code=status.HTTP_200_OK,
+)
+def kakao_social_login_handler() -> Response:
+    return RedirectResponse(
+        "https://kauth.kakao.com/oauth/authorize"
+        f"?client_id={settings.KAKAO_CLIENT_ID}"
+        f"&redirect_uri={settings.KAKAO_REDIRECT_URI}"
+        f"&response_type=code",
+    )
+
+
+@router.get("/kakao/callback")
+async def callback(code: str) -> dict[str, str]:
+    token_url = "https://kauth.kakao.com/oauth/token"
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            token_url,
+            data={
+                "grant_type": "authorization_code",
+                "client_id": settings.KAKAO_CLIENT_ID,
+                "redirect_uri": settings.KAKAO_REDIRECT_URI,
+                "client_secret": settings.KAKAO_CLIENT_SECRET,
+                "code": code,
+            },
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code, detail="Failed to get access token"
+        )
+
+    token_data = response.json()
+    access_token = token_data.get("access_token")
+
+    # 사용자 정보 요청
+    user_info_url = "https://kapi.kakao.com/v2/user/me"
+    async with httpx.AsyncClient() as client:
+        user_info_response = await client.get(
+            user_info_url, headers={"Authorization": f"Bearer {access_token}"}
+        )
+
+    if user_info_response.status_code != 200:
+        raise HTTPException(
+            status_code=user_info_response.status_code, detail="Failed to get user info"
+        )
+
+    user_info = user_info_response.json()
+    return {"user_info": user_info}
 
 
 # 사용자 정보 수정
