@@ -7,7 +7,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import DateTime as SQLDateTime
 
 from src.config.database.orm import Base
-from src.friend.models import Friend  # test 코드 진행 시 Friend 모델을 찾지 못해 명시적으로 입력
 from src.user.service.authentication import hash_password
 
 T = TypeVar("T", bound="User")  # Generic type variable for the class method
