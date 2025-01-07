@@ -1,6 +1,5 @@
-import uuid
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 import boto3
 import httpx
@@ -8,12 +7,10 @@ import jwt
 from botocore.exceptions import ClientError
 from fastapi import (
     APIRouter,
-    Body,
     Depends,
     File,
     Form,
     HTTPException,
-    Path,
     Request,
     Response,
     UploadFile,
@@ -39,7 +36,6 @@ from src.user.service.authentication import (
     hash_password,
     verify_password,
 )
-from src.user.service.s3controller import image_upload
 from src.user.service.smtp import send_email
 
 settings = Settings()
@@ -309,9 +305,7 @@ async def update_user(
 
         try:
             # 고유한 파일명 생성
-            image_filename = (
-                f"profile_{user_id}_{datetime.now()}"
-            )
+            image_filename = f"profile_{user_id}_{datetime.now()}"
             s3_key = f"profiles/{image_filename}"
 
             # S3 클라이언트 설정
