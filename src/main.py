@@ -41,7 +41,6 @@ add_pagination(app)
 
 
 # 기본 루트 핸들러
-# API 엔드포인트 예시
 @app.get("/")
 async def root() -> dict[str, str]:
     print("main.py -> root")
@@ -49,7 +48,7 @@ async def root() -> dict[str, str]:
 
 
 # 로컬 실행을 위한 uvicorn 설정
-# if __name__ == "__main__":
-#     import uvicorn
-#
-#     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
