@@ -1,3 +1,5 @@
+import random
+import string
 import time
 from datetime import datetime, timedelta
 from typing import Any, TypedDict, cast
@@ -21,7 +23,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # 비밀번호 해싱 함수
 def hash_password(password: str) -> str:
-    print("해쉬 password:" + pwd_context.hash(password))
     return cast(str, pwd_context.hash(password))
 
 
@@ -70,3 +71,17 @@ def authenticate(
             detail="Token expired",
         )
     return payload["user_id"]
+
+
+def create_verification_token(email: str) -> str:
+    payload = {
+        "email": email,
+        "exp": datetime.now() + timedelta(hours=1),  # 1시간 후 만료
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return token
+
+
+# 임시비밀번호 랜덤 생성기 ( 8자리 )
+def generate_password() -> str:
+    return "".join(random.choices(string.ascii_letters + string.digits, k=8))

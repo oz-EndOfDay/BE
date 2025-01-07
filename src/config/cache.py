@@ -1,6 +1,6 @@
 from redis import Redis
 
-from src.config import Settings
+from config import Settings
 
 settings = Settings()
 
