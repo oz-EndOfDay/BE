@@ -46,7 +46,7 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
 
     diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")  # type: ignore
-
+    # foreinkey 부분 추가 필요
     def __init__(self, name: str, nickname: str, email: str, password: str):
         self.name = name
         self.nickname = nickname
