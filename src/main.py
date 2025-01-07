@@ -47,7 +47,7 @@ async def root() -> dict[str, str]:
     return {"message": "Hello World"}
 
 
-# 로컬 실행을 위한 uvicorn 설정
+# 로컬 실행을 위한 uvicorn 설정.
 if __name__ == "__main__":
     import uvicorn
 
