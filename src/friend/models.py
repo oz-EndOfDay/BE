@@ -26,3 +26,6 @@ class Friend(Base):
     # 관계 설정
     user1 = relationship("User", foreign_keys=[user_id1])  # type: ignore
     user2 = relationship("User", foreign_keys=[user_id2])  # type: ignore
+
+
+__all__ = ["Friend", "Base"]

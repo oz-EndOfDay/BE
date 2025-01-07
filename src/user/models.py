@@ -31,10 +31,9 @@ class User(Base):
     )
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    provider: Mapped[str] = mapped_column(String, nullable=True)
 
     diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")  # type: ignore
-    friends1 = relationship("Friend", foreign_keys="[Friend.user_id1]", primaryjoin="User.id == Friend.user_id1")  # type: ignore
-    friends2 = relationship("Friend", foreign_keys="[Friend.user_id2]", primaryjoin="User.id == Friend.user_id2")  # type: ignore
 
     # foreinkey 부분 추가 필요
     def __init__(self, name: str, nickname: str, email: str, password: str):
