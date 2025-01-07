@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -21,9 +20,5 @@ class UpdateRequestBody(BaseModel):
         None,
     )
     img_url: Optional[str] = Field(
-        None,
-    )
-    modified_at: datetime = Field(...)
-    is_active: Optional[bool] = Field(
         None,
     )
