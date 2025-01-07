@@ -1,8 +1,12 @@
 import os
 import shutil
-from datetime import date
-from typing import Optional
+import uuid
+from datetime import date, datetime
+from pathlib import Path as PathLib
+from typing import Optional, Union
 
+import boto3
+from botocore.exceptions import ClientError
 from fastapi import (
     APIRouter,
     Depends,
@@ -16,16 +20,18 @@ from fastapi import (
 )
 from fastapi_pagination import Page, Params
 
-from diary.models import Diary, MoodEnum, WeatherEnum
-from diary.repository import DiaryRepository
-from diary.schema.response import (
+from src.config import Settings
+from src.diary.models import Diary, MoodEnum, WeatherEnum
+from src.diary.repository import DiaryRepository
+from src.diary.schema.response import (
     DiaryBriefResponse,
     DiaryDetailResponse,
     DiaryListResponse,
 )
-from user.service.authentication import authenticate
+from src.user.service.authentication import authenticate
 
 router = APIRouter(prefix="/diary", tags=["Diary"])
+settings = Settings()
 
 
 @router.post(
@@ -41,23 +47,53 @@ async def write_diary(
     weather: WeatherEnum = Form(...),
     mood: MoodEnum = Form(...),
     content: str = Form(...),
-    image: UploadFile | str = File(default=None),
+    image: Union[UploadFile, str] = File(default=None),
     diary_repo: DiaryRepository = Depends(),
 ) -> tuple[int, dict[str, str]]:
+    # S3 클라이언트 설정
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION,
+    )
 
-    img_url: str | None = None
+    img_url: Optional[str] = None
 
-    if image and image.filename:  # type: ignore
-        image_filename: str = f"{user_id}_diary_{image.filename}"  # type: ignore
-        img_url = os.path.join("src/diary/img", image_filename)
+    # 이미지 업로드 처리
+    if isinstance(image, UploadFile) and image.filename:
+        try:
+            # 고유한 파일명 생성
+            image_filename = (
+                f"diary_{user_id}_{uuid.uuid4()}{Path(image.filename).suffix}"
+            )
 
-        with open(img_url, "wb") as f:
-            shutil.copyfileobj(image.file, f)  # type: ignore
+            # S3에 업로드
+            s3_key = f"diaries/{image_filename}"
+            s3_client.upload_fileobj(
+                image.file,
+                settings.S3_BUCKET_NAME,
+                s3_key,
+                ExtraArgs={"ContentType": image.content_type},
+            )
 
+            # 공개 URL 생성
+            img_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+
+        except ClientError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"S3 업로드 오류: {str(e)}",
+            )
+
+    # 날짜를 datetime으로 변환
+    write_date_datetime = datetime.combine(write_date, datetime.min.time())
+
+    # 새 다이어리 생성
     new_diary = await Diary.create(
         user_id=user_id,
         title=title,
-        write_date=write_date,
+        write_date=write_date_datetime,  # datetime으로 변경
         weather=weather,
         mood=mood,
         content=content,
@@ -67,16 +103,12 @@ async def write_diary(
     try:
         await diary_repo.save(new_diary)
     except Exception as e:
-        print(e)
         raise HTTPException(status_code=404, detail=str(e))
 
     return 201, {
-        "message": "Your diary entry has been successfully created.",
+        "message": "일기가 성공적으로 생성되었습니다.",
         "status": "success",
     }
-
-
-# S3 사진 업로드 기능, 사진 삭제 로직 필요
 
 
 @router.get(
@@ -159,7 +191,7 @@ async def diary_detail(
             detail="You can only access your own diary entries.",
         )
 
-    return DiaryDetailResponse.model_validate(diary)
+    return DiaryDetailResponse.model_validate(diary)  # type: ignore
 
 
 @router.delete(
@@ -204,4 +236,4 @@ async def restore_diary(
             detail="Diary not found or cannot be restored",
         )
 
-    return DiaryDetailResponse.model_validate(restored_diary)
+    return DiaryDetailResponse.model_validate(restored_diary)  # type: ignore

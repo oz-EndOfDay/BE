@@ -7,13 +7,13 @@ from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from blacklist import blacklist_token
-from config import Settings
-from config.database.connection import get_async_session
-from user.models import User
-from user.repository import UserNotFoundException, UserRepository
-from user.schema.request import CreateRequestBody, UpdateRequestBody
-from user.schema.response import JWTResponse, UserMeDetailResponse, UserMeResponse
-from user.service.authentication import (
+from src.config import Settings
+from src.config.database.connection import get_async_session
+from src.user.models import User
+from src.user.repository import UserNotFoundException, UserRepository
+from src.user.schema.request import CreateRequestBody, UpdateRequestBody
+from src.user.schema.response import JWTResponse, UserMeDetailResponse, UserMeResponse
+from src.user.service.authentication import (
     ALGORITHM,
     authenticate,
     create_verification_token,
@@ -22,7 +22,7 @@ from user.service.authentication import (
     hash_password,
     verify_password,
 )
-from user.service.smtp import send_email
+from src.user.service.smtp import send_email
 
 settings = Settings()
 

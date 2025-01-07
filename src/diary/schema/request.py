@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from diary.models import MoodEnum, WeatherEnum
+from src.diary.models import MoodEnum, WeatherEnum
 
 
 # 이미지가 항시 존재하지 않는데 계속 요구해서 사용하지 않음
