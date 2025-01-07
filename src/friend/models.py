@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from src.config.database.orm import Base
 
@@ -10,8 +10,12 @@ class Friend(Base):
     __tablename__ = "friends"
 
     id = Column(Integer, primary_key=True)
-    user_id1 = Column(Integer, ForeignKey("users.id", ondelete='SET NULL'), nullable=False)
-    user_id2 = Column(Integer, ForeignKey("users.id", ondelete='SET NULL'), nullable=False)
+    user_id1 = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=False
+    )
+    user_id2 = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=False
+    )
 
     is_accept = Column(Boolean, default=False)
     ex_diary_cnt = Column(Integer, default=0)
@@ -19,5 +23,5 @@ class Friend(Base):
     created_at = Column(DateTime, default=datetime.now)
 
     # 관계 설정
-    user1 = relationship("User", foreign_keys=[user_id1])
-    user2 = relationship("User", foreign_keys=[user_id2])
+    user1 = relationship("User", back_populates="friends")  # type: ignore
+    user2 = relationship("User", back_populates="friends")  # type: ignore
