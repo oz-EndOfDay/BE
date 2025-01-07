@@ -43,5 +43,5 @@ async def periodic_cleanup() -> None:
                 await session_gen.aclose()
             except StopAsyncIteration:
                 pass
-        logger.info("15초 대기 시작")
+        logger.info("1시간 대기 시작")
         await asyncio.sleep(3600)  # 1시간마다 7일 지난 유저 삭제

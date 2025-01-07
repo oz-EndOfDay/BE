@@ -1,9 +1,24 @@
+import uuid
 from datetime import datetime, timedelta
-from typing import Dict
+from typing import Dict, Optional, Union
 
+import boto3
 import httpx
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from botocore.exceptions import ClientError
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Path,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import RedirectResponse
@@ -278,14 +293,51 @@ async def callback(code: str) -> dict[str, str]:
     response_model=UserMeResponse,
 )
 async def update_user(
-    user_data: UpdateRequestBody,  # 사용자 수정 데이터에 대한 Pydantic 모델
     user_id: int = Depends(authenticate),  # 인증된 사용자 ID
+    user_data: UpdateRequestBody = Form(...),  # 사용자 수정 데이터에 대한 Pydantic 모델
+    image: Union[UploadFile, str] = File(default=None),
     session: AsyncSession = Depends(get_async_session),
 ) -> UserMeResponse:
     user_repo = UserRepository(session)  # UserRepository 인스턴스 생성
 
+    if image:
+        s3_client = boto3.client(
+            "s3",
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION,
+        )
+
+        # 이미지 업로드 처리
+        if isinstance(image, UploadFile) and image.filename:
+            try:
+                # 고유한 파일명 생성
+                image_filename = (
+                    f"profile_{user_id}_{uuid.uuid4()}{Path(image.filename).suffix}"
+                )
+
+                # S3에 업로드
+                s3_key = f"profiles/{image_filename}"
+                s3_client.upload_fileobj(
+                    image.file,
+                    settings.S3_BUCKET_NAME,
+                    s3_key,
+                    ExtraArgs={"ContentType": image.content_type},
+                )
+
+                # 공개 URL 생성
+                img_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+                user_data.img_url = img_url
+
+            except ClientError as e:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"S3 업로드 오류: {str(e)}",
+                )
+
     try:
         updated_user = await user_repo.update_user(user_id, user_data)
+
     except UserNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
