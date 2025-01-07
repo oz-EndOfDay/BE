@@ -40,7 +40,7 @@ async def websocket_endpoint(
             friend_id = int(friend_id_str)
 
             message = MessageCreate(
-                user_id=user_id, friend_id=friend_id, content=content
+                users_id=user_id, friend_id=friend_id, content=content
             )
             await create_message(db, message)
 

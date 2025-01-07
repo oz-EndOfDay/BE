@@ -9,8 +9,8 @@ class Message(Base):
     __tablename__ = "message"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("user.id"))
-    friend_id = Column(Integer, ForeignKey("friend.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    friend_id = Column(Integer, ForeignKey("friends.id"))
     message = Column(Text)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
 

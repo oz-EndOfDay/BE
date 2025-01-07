@@ -9,6 +9,8 @@ from src.config.database.connection_async import async_engine
 # 라우터 import
 from src.user.api.router import router as user_router
 from src.user.models import Base
+from src.friend.models import Base
+from src.websocket.models import Base
 from src.websocket.api.router import router as websocket_router
 
 
