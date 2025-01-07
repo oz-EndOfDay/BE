@@ -4,6 +4,9 @@ version = "0.1.0"
 description = ""
 authors = ["mountain-kangkang <rngl10@naver.com>"]
 readme = "README.md"
+packages = [
+    {include = "src", from = "."}
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -15,7 +18,6 @@ sqlalchemy = "^2.0.36"
 psycopg2-binary = "^2.9.10"
 alembic = "^1.14.0"
 uvicorn = "^0.34.0"
-mypy = "^1.14.0"
 python-dotenv = "^1.0.1"
 pydantic-settings = "^2.7.0"
 asyncpg = "^0.30.0"
@@ -23,6 +25,11 @@ python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-multipart = "^0.0.20"
 pyjwt = "^2.10.1"
+pymysql = "^1.1.1"
+bcrypt = "4.0.1"
+celery = "^5.4.0"
+fastapi-pagination = "^0.12.34"
+boto3 = "^1.35.92"
 pydantic = "^2.10.4"
 
 
@@ -31,6 +38,9 @@ black = "^24.10.0"
 isort = "^5.13.2"
 mypy = "^1.14.0"
 pytest-asyncio = "^0.25.0"
+sqlalchemy = {extras = ["mypy"], version = "^2.0.36"}
+pillow = "^11.1.0"
+moto = {extras = ["all"], version = "^5.0.26"}
 
 [build-system]
 requires = ["poetry-core"]
@@ -41,6 +51,8 @@ pythonpath = [".", "src"]
 addopts = "-v"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.black]
 line-length = 88
@@ -71,11 +83,16 @@ python_version = "3.12"
 strict = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
+allow_subclassing_any = true  # BaseSettings 상속 관련 오류 해결
+namespace_packages = true
+explicit_package_bases = true
 plugins = [
     "sqlalchemy.ext.mypy.plugin",
     "pydantic.mypy"
 ]
-allow_subclassing_any = true  # BaseSettings 상속 관련 오류 해결
+exclude = [
+    "^alembic/",  # 루트 디렉토리 바로 아래의 alembic 디렉토리 제외
+]
 
 [tool.pydantic-mypy]
 init_forbid_extra = true

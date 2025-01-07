@@ -6,7 +6,7 @@ from src.config.database.orm import Base
 
 
 class Message(Base):
-    __tablename__ = "message"
+    __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
