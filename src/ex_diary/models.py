@@ -27,8 +27,10 @@ class ExDiary(Base):
     __tablename__ = "ex_diaries"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id', nullable=False))
-    friend_id = Column(Integer, ForeignKey('friends.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", nullable=False))
+    friend_id = Column(
+        Integer, ForeignKey("friends.id", ondelete="CASCADE"), nullable=False
+    )
 
     title = Column(Text, nullable=False)
     write_date = Column(Date, nullable=False)
@@ -39,8 +41,8 @@ class ExDiary(Base):
     created_at = Column(DateTime, default=datetime.now)
 
     # Relationships
-    user = relationship("User", back_populates="ex_diaries")
-    friend = relationship("Friend", back_populates="ex_diaries")
+    user = relationship("User", back_populates="ex_diaries")  # type: ignore
+    friend = relationship("Friend", back_populates="ex_diaries")  # type: ignore
 
     @classmethod
     async def create(

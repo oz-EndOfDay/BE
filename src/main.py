@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import BackgroundTasks, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
 
 # 데이터베이스 관련 모듈
@@ -38,6 +39,15 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(user_router)
 app.include_router(diary_router)
 add_pagination(app)
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 모든 오리진 허용 (개발 환경)
+    allow_credentials=True,
+    allow_methods=["*"],  # 모든 HTTP 메서드 허용
+    allow_headers=["*"],  # 모든 헤더 허용
+)
 
 
 # 기본 루트 핸들러
