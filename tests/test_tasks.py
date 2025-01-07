@@ -13,6 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import Settings
 from src.diary.models import Diary
 from src.diary.service.tasks import delete_expired_diaries
+from src.ex_diary.models import ExDiary
+from src.friend.models import Friend
 from src.user.models import User
 
 settings = Settings()
