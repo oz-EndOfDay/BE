@@ -1,23 +1,23 @@
-import re
 from datetime import datetime
-from typing import Type, TypeVar
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer
+from sqlalchemy.orm import relationship
 
 from src.config.database.orm import Base
-
-T = TypeVar("T", bound="Friend")  # Generic type variable for the class method
 
 
 class Friend(Base):
     __tablename__ = "friends"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
+    user_id1 = Column(Integer, ForeignKey("users.id", ondelete='SET NULL'), nullable=False)
+    user_id2 = Column(Integer, ForeignKey("users.id", ondelete='SET NULL'), nullable=False)
+
     is_accept = Column(Boolean, default=False)
-    user_id1 = Column(Integer, ForeignKey("users.id"), nullable=False)
-    user_id2 = Column(Integer, ForeignKey("users.id"), nullable=False)
     ex_diary_cnt = Column(Integer, default=0)
-    last_ex_date = Column(DateTime, default=datetime.now)
+    last_ex_date = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.now)
 
-
-__all__ = ["Friend", "Base"]
+    # 관계 설정
+    user1 = relationship("User", foreign_keys=[user_id1])
+    user2 = relationship("User", foreign_keys=[user_id2])

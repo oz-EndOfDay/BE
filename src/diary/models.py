@@ -1,6 +1,5 @@
 from datetime import datetime
 from enum import Enum as PyEnum
-from typing import List
 
 from sqlalchemy import Column, Date, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.asyncio import AsyncSession
