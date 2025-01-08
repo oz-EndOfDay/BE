@@ -11,8 +11,8 @@ from fastapi_pagination import add_pagination
 from src.config.database.connection import async_engine
 from src.config.database.orm import Base
 from src.diary.api.router import router as diary_router
-from src.friend.api.router import router as friend_router
 from src.ex_diary.api.router import router as ex_diary_router
+from src.friend.api.router import router as friend_router
 
 # 라우터 import
 from src.user.api.router import router as user_router
