@@ -11,6 +11,7 @@ from fastapi_pagination import add_pagination
 from src.config.database.connection import async_engine
 from src.config.database.orm import Base
 from src.diary.api.router import router as diary_router
+from src.ex_diary.api.router import router as ex_diary_router
 
 # 라우터 import
 from src.user.api.router import router as user_router
@@ -38,6 +39,7 @@ app = FastAPI(lifespan=lifespan)
 # 라우터 포함
 app.include_router(user_router)
 app.include_router(diary_router)
+app.include_router(ex_diary_router)
 add_pagination(app)
 
 # CORS 설정
@@ -48,7 +50,6 @@ app.add_middleware(
     allow_methods=["*"],  # 모든 HTTP 메서드 허용
     allow_headers=["*"],  # 모든 헤더 허용
 )
-
 
 # 기본 루트 핸들러
 @app.get("/")
