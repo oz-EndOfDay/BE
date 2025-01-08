@@ -1,6 +1,5 @@
 from datetime import datetime
 from enum import Enum as PyEnum
-from typing import List
 
 from sqlalchemy import Column, Date, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,8 +32,8 @@ class Diary(Base):
     user = relationship("User", back_populates="diaries", uselist=True)  # type: ignore
     title = Column(Text, nullable=False)
     write_date = Column(Date, nullable=False)
-    weather: Mapped[WeatherEnum] = Column(Enum(WeatherEnum))
-    mood: Mapped[MoodEnum] = Column(Enum(MoodEnum))
+    weather: Mapped[WeatherEnum] = Column(Enum(WeatherEnum), nullable=False)
+    mood: Mapped[MoodEnum] = Column(Enum(MoodEnum), nullable=False)
     content = Column(Text, nullable=False)
     img_url = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.now)
