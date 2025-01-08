@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from fastapi import Depends
 from sqlalchemy import delete, select
@@ -105,7 +105,7 @@ class FriendRepository:
         return True
 
     # 교환 일기 정보 업데이트 레포
-    async def update(self, friend_id: int, data: dict) -> bool:
+    async def update(self, friend_id: int, data: Dict[str, Any]) -> bool:
         try:
             # friend_id로 대상 Friend 객체 조회
             result = await self.session.execute(

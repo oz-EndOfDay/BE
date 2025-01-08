@@ -16,14 +16,13 @@ from fastapi import (
     status,
 )
 
-from src.config.database.connection import get_async_session
-from src.friend.models import Friend
-from src.friend.repository import FriendRepository
 from src.config import Settings
 from src.diary.models import MoodEnum, WeatherEnum
 from src.ex_diary.models import ExDiary
 from src.ex_diary.repository import ExDiaryRepository
 from src.ex_diary.schema.response import ExDiaryListResponse, ExDiaryResponse
+from src.friend.models import Friend
+from src.friend.repository import FriendRepository
 from src.user.service.authentication import authenticate
 
 router = APIRouter(prefix="/ex_diary", tags=["Exchange Diary"])
@@ -47,7 +46,7 @@ async def write_ex_diary(
     content: str = Form(...),
     image: Union[UploadFile, str] = File(default=None),
     ex_diary_repo: ExDiaryRepository = Depends(),  # 수정된 부분
-    friend_repo: FriendRepository = Depends(),      # 수정된 부분
+    friend_repo: FriendRepository = Depends(),  # 수정된 부분
 ) -> tuple[int, dict[str, str]]:
     # S3 클라이언트 설정
     s3_client = boto3.client(
@@ -124,9 +123,9 @@ async def write_ex_diary(
         await friend_repo.update(
             friend_id=friend_id,
             data={
-                'ex_diary_cnt': Friend.ex_diary_cnt + 1,
-                'last_ex_date': datetime.now()
-            }
+                "ex_diary_cnt": Friend.ex_diary_cnt + 1,
+                "last_ex_date": datetime.now(),
+            },
         )
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -162,6 +161,7 @@ async def ex_diary_list(
     # return ex_diaries  # type: ignore
     return ExDiaryListResponse.build(ex_diaries=ex_diaries, user_id=user_id)
 
+
 @router.get(
     path="/{friend_id}/{ex_diary_id}",
     summary="교환일기 상세 조회",
@@ -170,11 +170,13 @@ async def ex_diary_list(
 )
 async def ex_diary_detail(
     user_id: int = Depends(authenticate),
-    friend_id: int = Path(...,  description="친구 관계 id(친구의 유저 id (X))"),
+    friend_id: int = Path(..., description="친구 관계 id(친구의 유저 id (X))"),
     ex_diary_id: int = Path(..., description="상세 조회할 교환일기의 id"),
     ex_diary_repo: ExDiaryRepository = Depends(),
 ) -> ExDiaryResponse:
-    ex_diary = await ex_diary_repo.get_ex_diary_detail(friend_id=friend_id, ex_diary_id=ex_diary_id)
+    ex_diary = await ex_diary_repo.get_ex_diary_detail(
+        friend_id=friend_id, ex_diary_id=ex_diary_id
+    )
 
     if not ex_diary:
         raise HTTPException(
@@ -186,3 +188,20 @@ async def ex_diary_detail(
         )
 
     return ExDiaryResponse.build(ex_diary=ex_diary, user_id=user_id)
+
+
+@router.delete(
+    path="/{friend_id}/{ex_diary_id}",
+    summary="교환일기 삭제",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def ex_diary_delete(
+    user_id: int = Depends(authenticate),
+    friend_id: int = Path(..., description="친구 관계 id(친구의 유저 id (X))"),
+    ex_diary_id: int = Path(..., description="삭제할 교환일기 id"),
+    ex_diary_repo: ExDiaryRepository = Depends(),
+) -> None:
+    await ex_diary_repo.delete_ex_diary(
+        user_id=user_id, friend_id=friend_id, ex_diary_id=ex_diary_id
+    )
+    # return 204, {"message": "ExDiary entry successfully deleted.", "status": "success"}
