@@ -4,7 +4,6 @@ from typing import Optional, Type, TypeVar
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.types import DateTime as SQLDateTime
 
 from src.config.database.orm import Base
 from src.user.service.authentication import hash_password
@@ -31,6 +30,7 @@ class User(Base):
     )
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+
     provider: Mapped[str] = mapped_column(String, nullable=True)
 
     diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")  # type: ignore
