@@ -4,12 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.database.connection import get_async_session
-from src.friend.models import Friend
 from src.friend.repository import FriendRepository
 from src.friend.schema.request import (
     AcceptFriendRequest,
     DeleteFriendRequest,
-    FriendRequest,
     FriendRequestByEmail,
 )
 from src.friend.schema.response import (
@@ -54,10 +52,6 @@ async def send_friend_request_by_email(
     if target_user.id == user_id:
         raise HTTPException(status_code=400, detail="자신을 친구로 등록할 수 없습니다.")
 
-    # 이미 친구 관계인지 확인 (이 부분은 별도의 메서드로 구현할 수 있습니다)
-    # existing_friend = await friend_repo.get_existing_friend(current_user_id, target_user.id)
-    # if existing_friend:
-    #     raise HTTPException(status_code=400, detail="Friend request already sent or you are already friends")
 
     # 친구 신청 생성
     try:

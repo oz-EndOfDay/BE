@@ -4,7 +4,6 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.friend.models import Friend
-from src.friend.schema.response import FriendList, FriendResponse
 
 
 class FriendRepository:
