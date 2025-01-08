@@ -15,19 +15,6 @@ class User(Base):
     __tablename__ = "users"
     __table_args__ = {"extend_existing": True}
 
-    # id = Column(Integer, primary_key=True, index=True)
-    # name = Column(String, nullable=False)
-    # nickname = Column(String, unique=True, index=True, nullable=False)
-    # email = Column(String, unique=True, index=True, nullable=False)
-    # introduce = Column(String)
-    # password = Column(String, nullable=False)
-    # img_url = Column(String)
-    # created_at = Column(DateTime, default=datetime.now)
-    # modified_at = Column(
-    #     DateTime(timezone=True), default=datetime.now, onupdate=datetime.now
-    # )
-    # deleted_at = Column(DateTime)
-    # is_active = Column(Boolean, default=False)
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     nickname: Mapped[str] = mapped_column(
@@ -43,7 +30,9 @@ class User(Base):
     )
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
-    provider: Mapped[str] = mapped_column(String, nullable=False)
+
+    provider: Mapped[str] = mapped_column(String, nullable=True)
+
     diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")  # type: ignore
 
     def __init__(
