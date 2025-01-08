@@ -9,6 +9,7 @@ from sqlalchemy.future import select
 
 from .models import User
 from .schema.request import UpdateRequestBody
+from .schema.response import SocialUser
 from .service.authentication import generate_password, hash_password
 
 
@@ -26,6 +27,22 @@ class UserRepository:
         await self.session.commit()
         await self.session.refresh(user)  # 새로 생성된 객체를 갱신
         return user
+
+    async def create_user_from_social(self, social_user: SocialUser) -> int:
+        print("social user 생성")
+        new_user = User(
+            nickname=social_user.nickname,
+            email=social_user.email,
+            name="",
+            password="",
+            is_active=social_user.is_active,
+            provider=social_user.provider,
+        )
+        self.session.add(new_user)
+        await self.session.commit()
+        await self.session.refresh(new_user)
+
+        return new_user.id
 
     # 아이디로 사용자 조회
     async def get_user_by_id(self, user_id: int) -> User | None:

@@ -16,6 +16,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import RedirectResponse
@@ -28,6 +29,8 @@ from src.user.repository import UserNotFoundException, UserRepository
 from src.user.schema.request import CreateRequestBody, UpdateRequestBody
 from src.user.schema.response import (
     JWTResponse,
+    SocialUser,
+    UserInfo,
     UserMeDetailResponse,
     UserMeResponse,
     UserSearchResponse,
@@ -46,6 +49,7 @@ from src.user.service.smtp import send_email
 settings = Settings()
 
 router = APIRouter(prefix="/users", tags=["User"])
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 # 유저 생성 (회원가입)
@@ -64,6 +68,8 @@ async def create_user(
         nickname=user_data.nickname,
         email=user_data.email,
         password=hash_password(user_data.password),  # 비밀번호 해싱 처리
+        is_active=False,
+        provider="",
     )
 
     created_user = await user_repo.create_user(new_user)  # 올바른 메서드 호출
@@ -235,7 +241,7 @@ async def logout_handler(request: Request) -> Dict[str, str]:
 
 
 @router.get(
-    "/social/kakao/login",
+    "/kakao/login",
     status_code=status.HTTP_200_OK,
 )
 def kakao_social_login_handler() -> Response:
@@ -248,7 +254,10 @@ def kakao_social_login_handler() -> Response:
 
 
 @router.get("/kakao/callback")
-async def callback(code: str) -> dict[str, str]:
+async def callback(
+    code: str,
+    session: AsyncSession = Depends(get_async_session),
+) -> dict[str, str | UserInfo]:
     token_url = "https://kauth.kakao.com/oauth/token"
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -283,7 +292,35 @@ async def callback(code: str) -> dict[str, str]:
         )
 
     user_info = user_info_response.json()
-    return {"user_info": user_info}
+    user_email = user_info.get("kakao_account", {}).get("email")
+
+    if not user_email:
+        raise HTTPException(status_code=400, detail="Email not provided by Kakao")
+
+    user_repo = UserRepository(session)
+    existing_user = await user_repo.get_user_by_email(user_email)
+
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    new_user = SocialUser(
+        email=user_email,
+        nickname=f'kakao_{user_info.get("id")}',
+        provider="kakao",
+        is_active=True,
+    )
+    user_id = await user_repo.create_user_from_social(new_user)
+
+    user_data = UserInfo(
+        id=user_info.get("id"),
+        nickname=f"kakao_{user_info.get('id')}",
+        email=user_info.get("kakao_account", {}).get("email"),
+        connected_at=user_info.get("connected_at"),
+    )
+
+    access_token = encode_access_token(user_id=user_id)
+
+    return {"user_info": user_data, "access_token": access_token}
 
 
 # 사용자 정보 수정
