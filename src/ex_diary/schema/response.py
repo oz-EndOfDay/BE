@@ -40,3 +40,23 @@ class ExDiaryListResponse(BaseModel):
                 for d in ex_diaries
             ]
         )
+
+
+class ExDiaryResponse(BaseModel):
+    id: int
+    title: str
+    write_date: date
+    content: str
+    img_url: str
+    created_at: datetime
+
+    @classmethod
+    def build(cls, ex_diary: ExDiary, user_id: int) -> "ExDiaryResponse":
+        return cls(
+            id=ex_diary.id or 0,
+            title=ex_diary.title or "",
+            write_date=ex_diary.write_date or date.today(),
+            content=ex_diary.content or "",
+            img_url=ex_diary.img_url or "",
+            created_at=ex_diary.created_at or datetime.now(),
+        )

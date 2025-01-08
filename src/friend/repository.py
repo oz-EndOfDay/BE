@@ -1,13 +1,15 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 
+from fastapi import Depends
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config.database.connection import get_async_session
 from src.friend.models import Friend
 
 
 class FriendRepository:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession = Depends(get_async_session)):
         self.session = session
 
     # 친구 신청 repo
@@ -101,3 +103,28 @@ class FriendRepository:
         await self.session.execute(delete(Friend).where(Friend.id == friend_id))
         await self.session.commit()
         return True
+
+    # 교환 일기 정보 업데이트 레포
+    async def update(self, friend_id: int, data: Dict[str, Any]) -> bool:
+        try:
+            # friend_id로 대상 Friend 객체 조회
+            result = await self.session.execute(
+                select(Friend).filter(Friend.id == friend_id)
+            )
+            friend = result.scalar_one_or_none()
+
+            if not friend:
+                raise ValueError("해당 친구를 찾을 수 없습니다.")
+
+            # 전달받은 데이터로 객체 업데이트
+            for key, value in data.items():
+                setattr(friend, key, value)
+
+            await self.session.commit()
+            await self.session.refresh(friend)
+
+            return True
+
+        except Exception as e:
+            await self.session.rollback()
+            raise e
