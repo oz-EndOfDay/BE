@@ -1,3 +1,4 @@
+import os
 import uuid
 from datetime import date, datetime
 from typing import Optional, Union
@@ -26,6 +27,7 @@ router = APIRouter(prefix="/ex_diary", tags=["Exchange Diary"])
 settings = Settings()
 
 
+# 교환일기 작성 시 친구테이블에서 교환일기 수 증가하게 해야함, 마지막 교환 일자 업데이트도
 @router.post(
     path="/{friend_id}",
     summary="교환일기 작성",
@@ -33,8 +35,8 @@ settings = Settings()
     status_code=status.HTTP_201_CREATED,
 )
 async def write_ex_diary(
-    user_id: int = Depends(authenticate),
     friend_id: int = Path(..., description="친구 관계 ID(친구의 유저 ID(X))"),
+    user_id: int = Depends(authenticate),
     title: str = Form(...),
     write_date: date = Form(...),
     weather: WeatherEnum = Form(...),
@@ -50,15 +52,33 @@ async def write_ex_diary(
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         region_name=settings.AWS_REGION,
     )
-
     img_url: Optional[str] = None
 
     # 이미지 업로드 처리
-    if isinstance(image, UploadFile) and image.filename:
+    if image and image.filename:
         try:
+            # 파일 포인터 초기화
+            image.file.seek(0)
+
+            # 파일 크기 확인
+            file_size = len(image.file.read())
+            image.file.seek(0)  # 다시 포인터 초기화
+
+            print(f"File details:")
+            print(f"Filename: {image.filename}")
+            print(f"File size: {file_size} bytes")
+            print(f"Content type: {image.content_type}")
+
+            if file_size == 0:
+                print("Warning: Empty file received")
+                return 201, {
+                    "message": "이미지 파일이 비어있습니다.",
+                    "status": "warning"
+                }
+
             # 고유한 파일명 생성
             image_filename = (
-                f"ex_diary_{user_id}_{uuid.uuid4()}{Path(image.filename).suffix}"
+                f"ex_diary_{user_id}_{uuid.uuid4()}{os.path.splitext(image.filename)[1]}"
             )
 
             # S3에 업로드
@@ -112,10 +132,8 @@ async def write_ex_diary(
     response_model=ExDiaryListResponse,
 )
 async def ex_diary_list(
+    friend_id: int = Path(...),
     user_id: int = Depends(authenticate),
-    friend_id: int = Path(
-        ..., description="조회할 교환 일기 친구 관계 ID(친구의 유저 ID(X))"
-    ),
     ex_diary_repo: ExDiaryRepository = Depends(),
 ) -> ExDiaryListResponse:
     ex_diaries = await ex_diary_repo.get_ex_diary_list(friend_id)

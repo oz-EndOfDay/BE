@@ -1,3 +1,4 @@
+import os
 import uuid
 from datetime import date, datetime
 from typing import Optional, Union
@@ -62,7 +63,7 @@ async def write_diary(
         try:
             # 고유한 파일명 생성
             image_filename = (
-                f"diary_{user_id}_{uuid.uuid4()}{Path(image.filename).suffix}"
+                f"diary_{user_id}_{uuid.uuid4()}{os.path.splitext(image.filename)[1]}"
             )
 
             # S3에 업로드
