@@ -25,3 +25,12 @@ class UserMeDetailResponse(BaseModel):  # 내 정보를 반환할 때
 
 class JWTResponse(BaseModel):
     access_token: str
+
+
+class UserSearchResponse(BaseModel):
+    id: int
+    nickname: str
+    email: str
+
+    class Config:
+        from_attributes = True

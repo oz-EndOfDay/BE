@@ -26,7 +26,12 @@ from src.config.database.connection import get_async_session
 from src.user.models import User
 from src.user.repository import UserNotFoundException, UserRepository
 from src.user.schema.request import CreateRequestBody, UpdateRequestBody
-from src.user.schema.response import JWTResponse, UserMeDetailResponse, UserMeResponse
+from src.user.schema.response import (
+    JWTResponse,
+    UserMeDetailResponse,
+    UserMeResponse,
+    UserSearchResponse,
+)
 from src.user.service.authentication import (
     ALGORITHM,
     authenticate,
@@ -446,3 +451,18 @@ async def recovery_account(
 
     except jwt.PyJWTError:
         raise HTTPException(status_code=400, detail="Invalid token")
+
+
+@router.post(
+    "/search", summary="닉네임이나 이메일로 유저 검색", status_code=status.HTTP_200_OK
+)
+async def search_users(
+    word: str, session: AsyncSession = Depends(get_async_session)
+) -> list[UserSearchResponse]:
+    user_repo = UserRepository(session)
+    users = await user_repo.search_user(word)
+
+    return [
+        UserSearchResponse(id=user.id, nickname=user.nickname, email=user.email)
+        for user in users
+    ]

@@ -1,8 +1,9 @@
+from collections import UserList
 from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import HTTPException
-from sqlalchemy import Nullable
+from sqlalchemy import Nullable, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -103,3 +104,14 @@ class UserRepository:
         user.is_active = True
         user.deleted_at = None
         await self.session.commit()
+
+    # 메일이나 닉네임으로 유저 검색
+    async def search_user(self, word: str) -> list[User]:
+        query = (
+            select(User)
+            .where(User.is_active.is_(True))
+            .filter(or_(User.nickname.ilike(word), User.email.ilike(word)))
+        )
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
