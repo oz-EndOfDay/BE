@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: str
     AWS_REGION: str
     S3_BUCKET_NAME: str
+    KAKAO_CLIENT_ID: str
+    KAKAO_REDIRECT_URI: str
+    KAKAO_CLIENT_SECRET: str
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"

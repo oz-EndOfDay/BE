@@ -4,7 +4,6 @@ from typing import Optional, Type, TypeVar
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.types import DateTime as SQLDateTime
 
 from src.config.database.orm import Base
 from src.user.service.authentication import hash_password
@@ -16,19 +15,6 @@ class User(Base):
     __tablename__ = "users"
     __table_args__ = {"extend_existing": True}
 
-    # id = Column(Integer, primary_key=True, index=True)
-    # name = Column(String, nullable=False)
-    # nickname = Column(String, unique=True, index=True, nullable=False)
-    # email = Column(String, unique=True, index=True, nullable=False)
-    # introduce = Column(String)
-    # password = Column(String, nullable=False)
-    # img_url = Column(String)
-    # created_at = Column(DateTime, default=datetime.now)
-    # modified_at = Column(
-    #     DateTime(timezone=True), default=datetime.now, onupdate=datetime.now
-    # )
-    # deleted_at = Column(DateTime)
-    # is_active = Column(Boolean, default=False)
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     nickname: Mapped[str] = mapped_column(
@@ -45,13 +31,26 @@ class User(Base):
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")  # type: ignore
+    provider: Mapped[str] = mapped_column(String, nullable=True)
 
-    def __init__(self, name: str, nickname: str, email: str, password: str):
+    diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")  # type: ignore
+    ex_diaries = relationship("ExDiary", back_populates="user")  # type: ignore
+
+    def __init__(
+        self,
+        name: str,
+        nickname: str,
+        email: str,
+        password: str,
+        is_active: bool,
+        provider: str,
+    ):
         self.name = name
         self.nickname = nickname
         self.email = email
         self.password = password
+        self.is_active = is_active
+        self.provider = provider
 
     @staticmethod
     def _is_bcrypt_pattern(password: str) -> bool:
@@ -59,13 +58,28 @@ class User(Base):
         return re.match(bcrypt_pattern, password) is not None
 
     @classmethod
-    def create(cls: Type[T], name: str, nickname: str, email: str, password: str) -> T:
+    def create(
+        cls: Type[T],
+        name: str,
+        nickname: str,
+        email: str,
+        password: str,
+        is_active: bool,
+        provider: str,
+    ) -> T:
         if cls._is_bcrypt_pattern(password):
             raise ValueError("Password must be plain text")
 
         hashed_password = hash_password(password)
         print("회원가입시 생성된 비밀번호:" + hashed_password)
-        return cls(name=name, nickname=nickname, email=email, password=hashed_password)
+        return cls(
+            name=name,
+            nickname=nickname,
+            email=email,
+            password=hashed_password,
+            is_active=is_active,
+            provider=provider,
+        )
 
 
 __all__ = ["User", "Base"]
