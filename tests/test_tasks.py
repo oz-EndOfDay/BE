@@ -47,6 +47,8 @@ async def test_delete_expired_diaries_with_s3(async_session: AsyncSession):
             email="test@example.com",
             nickname="testuser",
             password="password123",
+            is_active=False,
+            provider="",
         )
         async_session.add(test_user)
         await async_session.flush()
