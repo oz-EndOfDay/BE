@@ -23,6 +23,7 @@ from src.user.service.authentication import authenticate
 
 router = APIRouter(prefix="/friends", tags=["Friend"])
 
+
 @router.post(
     "",
     summary="친구 신청(이메일 입력)",
@@ -51,7 +52,6 @@ async def send_friend_request_by_email(
 
     if target_user.id == user_id:
         raise HTTPException(status_code=400, detail="자신을 친구로 등록할 수 없습니다.")
-
 
     # 친구 신청 생성
     try:
