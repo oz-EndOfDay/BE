@@ -19,6 +19,7 @@ from src.config import Settings
 from src.diary.models import MoodEnum, WeatherEnum
 from src.ex_diary.models import ExDiary
 from src.ex_diary.repository import ExDiaryRepository
+from src.ex_diary.schema.response import ExDiaryListResponse
 from src.user.service.authentication import authenticate
 
 router = APIRouter(prefix="/ex_diary", tags=["Exchange Diary"])
@@ -31,9 +32,9 @@ settings = Settings()
     response_model=None,
     status_code=status.HTTP_201_CREATED,
 )
-async def write_diary(
+async def write_ex_diary(
     user_id: int = Depends(authenticate),
-    friend_id: int = Path(..., description="친구 관계 ID(친구의 유저 ID(X)"),
+    friend_id: int = Path(..., description="친구 관계 ID(친구의 유저 ID(X))"),
     title: str = Form(...),
     write_date: date = Form(...),
     weather: WeatherEnum = Form(...),
@@ -102,3 +103,31 @@ async def write_diary(
         "message": "일기가 성공적으로 생성되었습니다.",
         "status": "success",
     }
+
+
+@router.get(
+    path="/{friend_id}",
+    summary="교환일기 조회",
+    status_code=status.HTTP_200_OK,
+    response_model=ExDiaryListResponse,
+)
+async def ex_diary_list(
+    user_id: int = Depends(authenticate),
+    friend_id: int = Path(
+        ..., description="조회할 교환 일기 친구 관계 ID(친구의 유저 ID(X))"
+    ),
+    ex_diary_repo: ExDiaryRepository = Depends(),
+) -> ExDiaryListResponse:
+    ex_diaries = await ex_diary_repo.get_ex_diary_list(friend_id)
+
+    if not ex_diaries:
+        raise HTTPException(
+            status_code=status.HTTP_200_OK,
+            detail={
+                "message": "검색 결과가 없습니다.",
+                "status": "success",
+            },
+        )
+
+    # return ex_diaries  # type: ignore
+    return ExDiaryListResponse.build(ex_diaries=ex_diaries, user_id=user_id)
