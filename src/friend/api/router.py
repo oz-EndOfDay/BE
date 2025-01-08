@@ -25,19 +25,19 @@ router = APIRouter(prefix="/friends", tags=["Friend"])
 
 
 @router.post(
-    "",
-    summary="친구 신청(이메일 입력)",
+    "/{user_id}",
+    summary="친구 신청 (검색된 친구에서 친구 id 값을 담아 요청)",
     response_model=FriendRequestByEmailResponse,
 )
 async def send_friend_request_by_email(
-    request: FriendRequestByEmail,
+    user_id: int,
     current_user_id: int = Depends(authenticate),  # 현재 인증된 사용자의 ID
     session: AsyncSession = Depends(get_async_session),
 ) -> FriendRequestByEmailResponse:
     user_repo = UserRepository(session)
     friend_repo = FriendRepository(session)
 
-    target_user = await user_repo.get_user_by_email(request.email)
+    target_user = await user_repo.get_user_by_id(user_id)
     if not target_user:
         raise HTTPException(
             status_code=404, detail="해당 메일을 가진 사용자가 없습니다."
