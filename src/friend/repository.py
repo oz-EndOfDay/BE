@@ -71,18 +71,17 @@ class FriendRepository:
         return result.scalar_one_or_none()
 
     # 친구 삭제 repo
-    async def delete_friend(self, user_id: int, friend_id: int) -> bool:
+    async def delete_friend(self, user_id: int, friend_delete_id: int) -> bool:
         result = await self.session.execute(
             select(Friend).filter(
-                (Friend.id == friend_id)
+                (Friend.id == friend_delete_id)
                 & ((Friend.user_id1 == user_id) | (Friend.user_id2 == user_id))
             )
         )
         friend = result.scalar_one_or_none()
-
         if not friend:
             return False
 
-        await self.session.execute(delete(Friend).where(Friend.id == friend_id))
+        await self.session.execute(delete(Friend).where(Friend.id == friend_delete_id))
         await self.session.commit()
         return True

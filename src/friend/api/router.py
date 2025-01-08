@@ -105,9 +105,9 @@ async def accept_friend(
             user_id, request.friend_request_id
         )
         if accept_request:
-            return {"success": "친구 신청 완료."}
+            return {"success": "친구 수락."}
         else:
-            return {"failed": "친구 신청 실패."}
+            return {"failed": "요청한 사용자를 찾을 수 없습니다."}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -124,6 +124,7 @@ async def list_friends(
     )
 
 
+# 친구 거절 시에도 테이블에서 삭제 동작하게 함.
 @router.delete("", summary="친구 삭제", response_model=DeleteFriendResponse)
 async def delete_friend(
     request: DeleteFriendRequest,
