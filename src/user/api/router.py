@@ -341,7 +341,7 @@ async def update_user(
 ) -> UserMeResponse:
     user_repo = UserRepository(session)  # UserRepository 인스턴스 생성
 
-    img_url: Optional[str] = None
+    img_url: Optional[str] = ""
 
     if image:
 
