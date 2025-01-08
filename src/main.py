@@ -4,12 +4,14 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import BackgroundTasks, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
 
 # 데이터베이스 관련 모듈
 from src.config.database.connection import async_engine
 from src.config.database.orm import Base
 from src.diary.api.router import router as diary_router
+from src.ex_diary.api.router import router as ex_diary_router
 from src.friend.api.router import router as friend_router
 
 # 라우터 import
@@ -39,7 +41,17 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(user_router)
 app.include_router(friend_router)
 app.include_router(diary_router)
+app.include_router(ex_diary_router)
 add_pagination(app)
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 모든 오리진 허용 (개발 환경)
+    allow_credentials=True,
+    allow_methods=["*"],  # 모든 HTTP 메서드 허용
+    allow_headers=["*"],  # 모든 헤더 허용
+)
 
 
 # 기본 루트 핸들러

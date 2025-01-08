@@ -4,6 +4,7 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
 from src.config.database.orm import Base
+from src.ex_diary.models import ExDiary
 
 
 class Friend(Base):
@@ -26,6 +27,7 @@ class Friend(Base):
     # 관계 설정
     user1 = relationship("User", foreign_keys=[user_id1])  # type: ignore
     user2 = relationship("User", foreign_keys=[user_id2])  # type: ignore
+    ex_diaries = relationship("ExDiary", back_populates="friend", cascade="all, delete-orphan")  # type: ignore
 
 
 __all__ = ["Friend", "Base"]

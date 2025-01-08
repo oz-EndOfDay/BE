@@ -13,6 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import Settings
 from src.diary.models import Diary
 from src.diary.service.tasks import delete_expired_diaries
+from src.ex_diary.models import ExDiary
+from src.friend.models import Friend
 from src.user.models import User
 
 settings = Settings()
@@ -45,6 +47,8 @@ async def test_delete_expired_diaries_with_s3(async_session: AsyncSession):
             email="test@example.com",
             nickname="testuser",
             password="password123",
+            is_active=False,
+            provider="",
         )
         async_session.add(test_user)
         await async_session.flush()
@@ -67,6 +71,8 @@ async def test_delete_expired_diaries_with_s3(async_session: AsyncSession):
             title="Expired Test Diary",
             user_id=test_user.id,
             write_date=datetime.now().date(),
+            weather="맑음",
+            mood="기쁨",
             content="Test content",
             deleted_at=datetime.now() - timedelta(days=8),
             img_url=img_url,

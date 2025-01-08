@@ -1,0 +1,150 @@
+import os
+import uuid
+from datetime import date, datetime
+from typing import Optional, Union
+
+import boto3
+from botocore.exceptions import ClientError
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Path,
+    UploadFile,
+    status,
+)
+
+from src.config import Settings
+from src.diary.models import MoodEnum, WeatherEnum
+from src.ex_diary.models import ExDiary
+from src.ex_diary.repository import ExDiaryRepository
+from src.ex_diary.schema.response import ExDiaryListResponse
+from src.user.service.authentication import authenticate
+
+router = APIRouter(prefix="/ex_diary", tags=["Exchange Diary"])
+settings = Settings()
+
+
+# 교환일기 작성 시 친구테이블에서 교환일기 수 증가하게 해야함, 마지막 교환 일자 업데이트도
+@router.post(
+    path="/{friend_id}",
+    summary="교환일기 작성",
+    response_model=None,
+    status_code=status.HTTP_201_CREATED,
+)
+async def write_ex_diary(
+    friend_id: int = Path(..., description="친구 관계 ID(친구의 유저 ID(X))"),
+    user_id: int = Depends(authenticate),
+    title: str = Form(...),
+    write_date: date = Form(...),
+    weather: WeatherEnum = Form(...),
+    mood: MoodEnum = Form(...),
+    content: str = Form(...),
+    image: Union[UploadFile, str] = File(default=None),
+    ex_diary_repo: ExDiaryRepository = Depends(),
+) -> tuple[int, dict[str, str]]:
+    # S3 클라이언트 설정
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION,
+    )
+    img_url: Optional[str] = None
+
+    # 이미지 업로드 처리
+    if image and image.filename:  # type: ignore
+        try:
+            # 파일 포인터 초기화
+            image.file.seek(0)  # type: ignore
+
+            # 파일 크기 확인
+            file_size = len(image.file.read())  # type: ignore
+            # 다시 포인터 초기화
+            image.file.seek(0)  # type: ignore
+
+            # print(f"File details:")
+            # print(f"Filename: {image.filename}")
+            # print(f"File size: {file_size} bytes")
+            # print(f"Content type: {image.content_type}")
+
+            if file_size == 0:
+                print("Warning: Empty file received")
+                return 201, {
+                    "message": "이미지 파일이 비어있습니다.",
+                    "status": "warning",
+                }
+
+            # 고유한 파일명 생성
+            image_filename = f"ex_diary_{user_id}_{uuid.uuid4()}{os.path.splitext(image.filename)[1]}"  # type: ignore
+
+            # S3에 업로드
+            s3_key = f"ex_diaries/{image_filename}"
+            s3_client.upload_fileobj(
+                image.file,  # type: ignore
+                settings.S3_BUCKET_NAME,
+                s3_key,
+                ExtraArgs={"ContentType": image.content_type},  # type: ignore
+            )
+
+            # 공개 URL 생성
+            img_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+
+        except ClientError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"S3 업로드 오류: {str(e)}",
+            )
+
+    # 날짜를 datetime으로 변환
+    write_date_datetime = datetime.combine(write_date, datetime.min.time())
+
+    # 새 다이어리 생성
+    new_ex_diary = await ExDiary.create(
+        user_id=user_id,
+        friend_id=friend_id,
+        title=title,
+        write_date=write_date_datetime,  # datetime으로 변경
+        weather=weather,
+        mood=mood,
+        content=content,
+        img_url=img_url or "",
+    )
+
+    try:
+        await ex_diary_repo.save(new_ex_diary)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    return 201, {
+        "message": "일기가 성공적으로 생성되었습니다.",
+        "status": "success",
+    }
+
+
+@router.get(
+    path="/{friend_id}",
+    summary="교환일기 조회",
+    status_code=status.HTTP_200_OK,
+    response_model=ExDiaryListResponse,
+)
+async def ex_diary_list(
+    friend_id: int = Path(...),
+    user_id: int = Depends(authenticate),
+    ex_diary_repo: ExDiaryRepository = Depends(),
+) -> ExDiaryListResponse:
+    ex_diaries = await ex_diary_repo.get_ex_diary_list(friend_id)
+
+    if not ex_diaries:
+        raise HTTPException(
+            status_code=status.HTTP_200_OK,
+            detail={
+                "message": "검색 결과가 없습니다.",
+                "status": "success",
+            },
+        )
+
+    # return ex_diaries  # type: ignore
+    return ExDiaryListResponse.build(ex_diaries=ex_diaries, user_id=user_id)
