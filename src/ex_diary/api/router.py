@@ -55,39 +55,38 @@ async def write_ex_diary(
     img_url: Optional[str] = None
 
     # 이미지 업로드 처리
-    if image and image.filename:
+    if image and image.filename:  # type: ignore
         try:
             # 파일 포인터 초기화
-            image.file.seek(0)
+            image.file.seek(0)  # type: ignore
 
             # 파일 크기 확인
-            file_size = len(image.file.read())
-            image.file.seek(0)  # 다시 포인터 초기화
+            file_size = len(image.file.read())  # type: ignore
+            # 다시 포인터 초기화
+            image.file.seek(0)  # type: ignore
 
-            print(f"File details:")
-            print(f"Filename: {image.filename}")
-            print(f"File size: {file_size} bytes")
-            print(f"Content type: {image.content_type}")
+            # print(f"File details:")
+            # print(f"Filename: {image.filename}")
+            # print(f"File size: {file_size} bytes")
+            # print(f"Content type: {image.content_type}")
 
             if file_size == 0:
                 print("Warning: Empty file received")
                 return 201, {
                     "message": "이미지 파일이 비어있습니다.",
-                    "status": "warning"
+                    "status": "warning",
                 }
 
             # 고유한 파일명 생성
-            image_filename = (
-                f"ex_diary_{user_id}_{uuid.uuid4()}{os.path.splitext(image.filename)[1]}"
-            )
+            image_filename = f"ex_diary_{user_id}_{uuid.uuid4()}{os.path.splitext(image.filename)[1]}"  # type: ignore
 
             # S3에 업로드
             s3_key = f"ex_diaries/{image_filename}"
             s3_client.upload_fileobj(
-                image.file,
+                image.file,  # type: ignore
                 settings.S3_BUCKET_NAME,
                 s3_key,
-                ExtraArgs={"ContentType": image.content_type},
+                ExtraArgs={"ContentType": image.content_type},  # type: ignore
             )
 
             # 공개 URL 생성
