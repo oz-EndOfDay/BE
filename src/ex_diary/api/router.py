@@ -16,6 +16,9 @@ from fastapi import (
     status,
 )
 
+from src.config.database.connection import get_async_session
+from src.friend.models import Friend
+from src.friend.repository import FriendRepository
 from src.config import Settings
 from src.diary.models import MoodEnum, WeatherEnum
 from src.ex_diary.models import ExDiary
@@ -43,7 +46,8 @@ async def write_ex_diary(
     mood: MoodEnum = Form(...),
     content: str = Form(...),
     image: Union[UploadFile, str] = File(default=None),
-    ex_diary_repo: ExDiaryRepository = Depends(),
+    ex_diary_repo: ExDiaryRepository = Depends(),  # 수정된 부분
+    friend_repo: FriendRepository = Depends(),      # 수정된 부분
 ) -> tuple[int, dict[str, str]]:
     # S3 클라이언트 설정
     s3_client = boto3.client(
@@ -115,6 +119,15 @@ async def write_ex_diary(
 
     try:
         await ex_diary_repo.save(new_ex_diary)
+
+        # Friend 테이블 업데이트는 여기에 추가
+        await friend_repo.update(
+            friend_id=friend_id,
+            data={
+                'ex_diary_cnt': Friend.ex_diary_cnt + 1,
+                'last_ex_date': datetime.now()
+            }
+        )
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
