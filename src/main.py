@@ -12,6 +12,7 @@ from src.config.database.connection import async_engine
 from src.config.database.orm import Base
 from src.diary.api.router import router as diary_router
 from src.ex_diary.api.router import router as ex_diary_router
+from src.friend.api.router import router as friend_router
 
 # 라우터 import
 from src.user.api.router import router as user_router
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(lifespan=lifespan)
 # 라우터 포함
 app.include_router(user_router)
+app.include_router(friend_router)
 app.include_router(diary_router)
 app.include_router(ex_diary_router)
 add_pagination(app)

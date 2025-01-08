@@ -1,6 +1,5 @@
-import uuid
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 import boto3
 import httpx
@@ -8,12 +7,10 @@ import jwt
 from botocore.exceptions import ClientError
 from fastapi import (
     APIRouter,
-    Body,
     Depends,
     File,
     Form,
     HTTPException,
-    Path,
     Request,
     Response,
     UploadFile,
@@ -148,10 +145,8 @@ async def verify_email(
         if user is None:
             raise HTTPException(status_code=404, detail="Email not found")
 
-        update_data = UpdateRequestBody(is_active=True, modified_at=datetime.now())
-
         if not user.id is None:
-            await user_repo.update_user(user.id, update_data)
+            await user_repo.is_active_user(user.id)
 
         return {"message": "Email verified successfully!"}
 
@@ -181,6 +176,7 @@ async def login_handler(
     if user is not None and user.id is not None:
         if user.is_active:
             if verify_password(plain_password=password, hashed_password=user.password):
+
                 access_token = encode_access_token(user_id=user.id)
                 response.set_cookie(
                     key="access_token", value=access_token, httponly=True
@@ -294,49 +290,60 @@ async def callback(code: str) -> dict[str, str]:
 )
 async def update_user(
     user_id: int = Depends(authenticate),  # 인증된 사용자 ID
-    user_data: UpdateRequestBody = Form(...),  # 사용자 수정 데이터에 대한 Pydantic 모델
-    image: Union[UploadFile, str] = File(default=None),
+    name: str = Form(...),
+    nickname: str = Form(...),
+    password: str = Form(...),
+    introduce: str = Form(...),
+    image: UploadFile = File(None),
     session: AsyncSession = Depends(get_async_session),
 ) -> UserMeResponse:
     user_repo = UserRepository(session)  # UserRepository 인스턴스 생성
 
+    img_url: Optional[str] = None
+
     if image:
-        s3_client = boto3.client(
-            "s3",
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-            region_name=settings.AWS_REGION,
-        )
 
-        # 이미지 업로드 처리
-        if isinstance(image, UploadFile) and image.filename:
-            try:
-                # 고유한 파일명 생성
-                image_filename = (
-                    f"profile_{user_id}_{uuid.uuid4()}{Path(image.filename).suffix}"
-                )
+        try:
+            # 고유한 파일명 생성
+            image_filename = f"profile_{user_id}_{datetime.now()}"
+            s3_key = f"profiles/{image_filename}"
 
-                # S3에 업로드
-                s3_key = f"profiles/{image_filename}"
-                s3_client.upload_fileobj(
-                    image.file,
-                    settings.S3_BUCKET_NAME,
-                    s3_key,
-                    ExtraArgs={"ContentType": image.content_type},
-                )
+            # S3 클라이언트 설정
+            s3_client = boto3.client(
+                "s3",
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_REGION,
+            )
 
-                # 공개 URL 생성
-                img_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
-                user_data.img_url = img_url
+            # S3에 이미지 업로드
+            s3_client.upload_fileobj(
+                image.file,
+                settings.S3_BUCKET_NAME,
+                s3_key,
+                ExtraArgs={"ContentType": image.content_type},
+            )
 
-            except ClientError as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"S3 업로드 오류: {str(e)}",
-                )
+            # 공개 URL 생성
+            img_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+            print(img_url)
+        except ClientError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"S3 업로드 오류: {str(e)}",
+            )
 
     try:
-        updated_user = await user_repo.update_user(user_id, user_data)
+        # 사용자 데이터 업데이트 (img_url 포함)
+        user_data_dict = {
+            "name": name,
+            "nickname": nickname,
+            "password": password,
+            "introduce": introduce,
+            "img_url": img_url,  # S3에서 받은 URL 또는 None
+        }
+
+        updated_user = await user_repo.update_user(user_id, user_data_dict)
 
     except UserNotFoundException:
         raise HTTPException(
