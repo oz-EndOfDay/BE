@@ -69,6 +69,8 @@ async def test_delete_expired_diaries_with_s3(async_session: AsyncSession):
             title="Expired Test Diary",
             user_id=test_user.id,
             write_date=datetime.now().date(),
+            weather="맑음",
+            mood="기쁨",
             content="Test content",
             deleted_at=datetime.now() - timedelta(days=8),
             img_url=img_url,

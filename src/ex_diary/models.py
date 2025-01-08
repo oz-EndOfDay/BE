@@ -18,8 +18,10 @@ class ExDiary(Base):
 
     title = Column(Text, nullable=False)
     write_date = Column(Date, nullable=False)
-    weather: Mapped[WeatherEnum] = Column(Enum(WeatherEnum, nullable=False))
-    mood: Mapped[MoodEnum] = Column(Enum(MoodEnum, nullable=False))
+    weather: Mapped[WeatherEnum] = Column(
+        Enum(WeatherEnum, name="ex_weatherenum"), nullable=False
+    )
+    mood: Mapped[MoodEnum] = Column(Enum(MoodEnum, name="ex_moodenum"), nullable=False)
     content = Column(Text, nullable=False)
     img_url = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.now)
