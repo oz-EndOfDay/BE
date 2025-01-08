@@ -1,12 +1,17 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class FriendCreate(BaseModel):
     user_id1: int
     user_id2: int
+
+
+class FriendRequestByEmailResponse(BaseModel):
+    success: bool
+    message: str
 
 
 class FriendRequestResponse(BaseModel):
@@ -42,3 +47,11 @@ class FriendList(BaseModel):  # 친구 요청 목록을 보기 위한 모델
 
 class FriendsListResponse(BaseModel):  # 친구 목록을 보기 위한 모델
     friends: list[FriendResponse]
+
+
+from pydantic import BaseModel
+
+
+class DeleteFriendResponse(BaseModel):
+    success: bool
+    message: str
