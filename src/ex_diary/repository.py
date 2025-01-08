@@ -25,3 +25,16 @@ class ExDiaryRepository:
         ex_diaries = result.scalars().all()
 
         return list(ex_diaries)
+
+    async def get_ex_diary_detail(self, friend_id: int, ex_diary_id: int) -> ExDiary:
+        query = (
+            select(ExDiary)
+            .where(
+                ExDiary.friend_id == friend_id,
+                ExDiary.id == ex_diary_id
+            )
+        )
+        result = await self.session.execute(query)
+        ex_diary = result.scalar_one_or_none()
+
+        return ex_diary

@@ -23,7 +23,7 @@ from src.config import Settings
 from src.diary.models import MoodEnum, WeatherEnum
 from src.ex_diary.models import ExDiary
 from src.ex_diary.repository import ExDiaryRepository
-from src.ex_diary.schema.response import ExDiaryListResponse
+from src.ex_diary.schema.response import ExDiaryListResponse, ExDiaryResponse
 from src.user.service.authentication import authenticate
 
 router = APIRouter(prefix="/ex_diary", tags=["Exchange Diary"])
@@ -38,7 +38,7 @@ settings = Settings()
     status_code=status.HTTP_201_CREATED,
 )
 async def write_ex_diary(
-    friend_id: int = Path(..., description="친구 관계 ID(친구의 유저 ID(X))"),
+    friend_id: int = Path(..., description="친구 관계 id(친구의 유저 id(X))"),
     user_id: int = Depends(authenticate),
     title: str = Form(...),
     write_date: date = Form(...),
@@ -139,12 +139,12 @@ async def write_ex_diary(
 
 @router.get(
     path="/{friend_id}",
-    summary="교환일기 조회",
+    summary="교환일기 목록 조회",
     status_code=status.HTTP_200_OK,
     response_model=ExDiaryListResponse,
 )
 async def ex_diary_list(
-    friend_id: int = Path(...),
+    friend_id: int = Path(..., description="친구 관계 id(친구의 유저 id (X))"),
     user_id: int = Depends(authenticate),
     ex_diary_repo: ExDiaryRepository = Depends(),
 ) -> ExDiaryListResponse:
@@ -161,3 +161,28 @@ async def ex_diary_list(
 
     # return ex_diaries  # type: ignore
     return ExDiaryListResponse.build(ex_diaries=ex_diaries, user_id=user_id)
+
+@router.get(
+    path="/{friend_id}/{ex_diary_id}",
+    summary="교환일기 상세 조회",
+    status_code=status.HTTP_200_OK,
+    response_model=ExDiaryResponse,
+)
+async def ex_diary_detail(
+    user_id: int = Depends(authenticate),
+    friend_id: int = Path(...,  description="친구 관계 id(친구의 유저 id (X))"),
+    ex_diary_id: int = Path(..., description="상세 조회할 교환일기의 id"),
+    ex_diary_repo: ExDiaryRepository = Depends(),
+) -> ExDiaryResponse:
+    ex_diary = await ex_diary_repo.get_ex_diary_detail(friend_id=friend_id, ex_diary_id=ex_diary_id)
+
+    if not ex_diary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "message": "해당 교환일기를 찾을 수 없습니다.",
+                "status": "fail",
+            },
+        )
+
+    return ExDiaryResponse.build(ex_diary=ex_diary, user_id=user_id)
