@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Tuple
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
@@ -13,43 +13,45 @@ router = APIRouter()
 
 class ConnectionManager:
     def __init__(self) -> None:
-        self.active_connections: Dict[str, WebSocket] = {}
+        self.active_connections: Dict[Tuple[int, int], WebSocket] = {}
 
-    async def connect(self, websocket: WebSocket, user_id: str) -> None:
+    async def connect(self, websocket: WebSocket, user_id: int, friend_id: int) -> None:
         await websocket.accept()
-        self.active_connections[user_id] = websocket
+        self.active_connections[(user_id, friend_id)] = websocket
 
-    def disconnect(self, user_id: str) -> None:
-        if user_id in self.active_connections:
-            del self.active_connections[user_id]
+    def disconnect(self, user_id: int, friend_id: int) -> None:
+        if (user_id, friend_id) in self.active_connections:
+            del self.active_connections[(user_id, friend_id)]
 
-    async def send_personal_message(self, message: str, user_id: str) -> None:
-        if user_id in self.active_connections:
-            await self.active_connections[user_id].send_text(message)
+    async def send_personal_message(
+        self, message: str, user_id: int, friend_id: int
+    ) -> None:
+        if (friend_id, user_id) in self.active_connections:
+            await self.active_connections[(friend_id, user_id)].send_text(message)
 
 
 manager = ConnectionManager()
 
 
-@router.websocket("/ws/{user_id}")
+@router.websocket("/ws/{user_id}/{friend_id}")
 async def websocket_endpoint(
-    websocket: WebSocket, user_id: str, db: Session = Depends(get_db)
+    websocket: WebSocket, user_id: int, friend_id: int, db: Session = Depends(get_db)
 ) -> None:
-    await manager.connect(websocket, user_id)
+    await manager.connect(websocket, user_id, friend_id)
     try:
         while True:
-            data = await websocket.receive_text()
-            recipient_id, content = data.split(":", 1)
-            await manager.send_personal_message(f"{user_id}: {content}", recipient_id)
-
-            # 메시지 저장
+            content = await websocket.receive_text()
             new_message = Message.create(
-                user_id=int(user_id), friend_id=int(recipient_id), content=content
+                user_id=user_id, friend_id=friend_id, content=content
             )
             db.add(new_message)
             db.commit()
+
+            await manager.send_personal_message(
+                f"{user_id}: {content}", user_id, friend_id
+            )
     except WebSocketDisconnect:
-        manager.disconnect(user_id)
+        manager.disconnect(user_id, friend_id)
 
 
 @router.post("/send_message/")
@@ -65,6 +67,6 @@ async def send_message(
     db.commit()
 
     await manager.send_personal_message(
-        f"{current_user}: {message.content}", str(message.friend_id)
+        f"{current_user}: {message.content}", current_user, message.friend_id
     )
     return {"status": "success", "message": "Message sent"}

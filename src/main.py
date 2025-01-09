@@ -7,15 +7,14 @@ from fastapi_pagination import add_pagination
 
 # 데이터베이스 관련 모듈
 from src.config.database.connection import async_engine
+from src.config.database.connection_async import async_engine
 from src.config.database.orm import Base
 from src.diary.api.router import router as diary_router
-from src.config.database.connection_async import async_engine
+from src.friend.models import Base
 
 # 라우터 import
 from src.user.api.router import router as user_router
 from src.user.models import Base
-from src.friend.models import Base
-from src.websocket.models import Base
 from src.websocket.api.router import router as websocket_router
 
 
