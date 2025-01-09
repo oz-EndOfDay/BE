@@ -9,7 +9,6 @@ class Message(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True)
-    chat_room_id = Column(Integer, default=0, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"))
     friend_id = Column(Integer, ForeignKey("friends.id"))
     message = Column(Text)
@@ -17,11 +16,13 @@ class Message(Base):
 
     @classmethod
     def create(
-        cls, user_id: int, friend_id: int, content: str,
+        cls,
+        user_id: int,
+        friend_id: int,
+        content: str,
     ) -> "Message":
         return cls(
             user_id=user_id,
             friend_id=friend_id,
             message=content,
-
         )
