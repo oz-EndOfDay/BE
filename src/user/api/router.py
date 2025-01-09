@@ -457,6 +457,7 @@ async def delete_user(
     path="/recovery", summary="계정 복구 가능 여부", status_code=status.HTTP_200_OK
 )
 async def recovery_possible(
+    request: Request,
     user_email: str,
     session: AsyncSession = Depends(get_async_session),
 ) -> dict[str, str]:
@@ -474,7 +475,7 @@ async def recovery_possible(
 
     token = create_verification_token(user.email)
     # 인증 링크 생성
-    recovery_link = f"http://localhost:8000/users/recovery/{token}"
+    recovery_link = f"{request.base_url}users/recovery/{token}"
 
     await send_email(
         to=user.email,
