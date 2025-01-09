@@ -5,10 +5,12 @@ from typing import AsyncGenerator
 
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi_pagination import add_pagination
 
 # 데이터베이스 관련 모듈
 from src.config.database.connection import async_engine
+from src.config.database.connection_async import async_engine
 from src.config.database.orm import Base
 from src.diary.api.router import router as diary_router
 from src.ex_diary.api.router import router as ex_diary_router
@@ -16,7 +18,9 @@ from src.friend.api.router import router as friend_router
 
 # 라우터 import
 from src.user.api.router import router as user_router
+from src.user.models import Base
 from src.user.service.tasks import periodic_cleanup
+from src.websocket.api.router import router as websocket_router
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +46,7 @@ app.include_router(user_router)
 app.include_router(friend_router)
 app.include_router(diary_router)
 app.include_router(ex_diary_router)
+app.include_router(websocket_router)
 add_pagination(app)
 
 # CORS 설정
@@ -61,7 +66,7 @@ async def root() -> dict[str, str]:
     return {"message": "Hello World"}
 
 
-# 로컬 실행을 위한 uvicorn 설정.
+# 로컬 실행을 위한 uvicorn 설정
 if __name__ == "__main__":
     import uvicorn
 
