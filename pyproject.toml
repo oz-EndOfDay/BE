@@ -31,6 +31,7 @@ celery = "^5.4.0"
 fastapi-pagination = "^0.12.34"
 boto3 = "^1.35.92"
 pydantic = "^2.10.4"
+fastapi-cli = "^0.0.7"
 
 
 [tool.poetry.group.dev.dependencies]

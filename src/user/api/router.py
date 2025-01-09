@@ -1,10 +1,26 @@
 from datetime import datetime, timedelta
-from typing import Dict
+from typing import Dict, Optional, Union
+from urllib.parse import urlparse
 
+import boto3
+import httpx
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from botocore.exceptions import ClientError
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import RedirectResponse
 
 from blacklist import blacklist_token
 from src.config import Settings
@@ -12,13 +28,21 @@ from src.config.database.connection import get_async_session
 from src.user.models import User
 from src.user.repository import UserNotFoundException, UserRepository
 from src.user.schema.request import CreateRequestBody, UpdateRequestBody
-from src.user.schema.response import JWTResponse, UserMeDetailResponse, UserMeResponse
+from src.user.schema.response import (
+    JWTResponse,
+    SocialUser,
+    UserInfo,
+    UserMeDetailResponse,
+    UserMeResponse,
+    UserSearchResponse,
+)
 from src.user.service.authentication import (
     ALGORITHM,
     authenticate,
     create_verification_token,
     decode_access_token,
     encode_access_token,
+    encode_refresh_token,
     hash_password,
     verify_password,
 )
@@ -27,6 +51,7 @@ from src.user.service.smtp import send_email
 settings = Settings()
 
 router = APIRouter(prefix="/users", tags=["User"])
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 # 유저 생성 (회원가입)
@@ -45,6 +70,8 @@ async def create_user(
         nickname=user_data.nickname,
         email=user_data.email,
         password=hash_password(user_data.password),  # 비밀번호 해싱 처리
+        is_active=False,
+        provider="",
     )
 
     created_user = await user_repo.create_user(new_user)  # 올바른 메서드 호출
@@ -131,10 +158,8 @@ async def verify_email(
         if user is None:
             raise HTTPException(status_code=404, detail="Email not found")
 
-        update_data = UpdateRequestBody(is_active=True, modified_at=datetime.now())
-
         if not user.id is None:
-            await user_repo.update_user(user.id, update_data)
+            await user_repo.is_active_user(user.id)
 
         return {"message": "Email verified successfully!"}
 
@@ -164,13 +189,18 @@ async def login_handler(
     if user is not None and user.id is not None:
         if user.is_active:
             if verify_password(plain_password=password, hashed_password=user.password):
+                refresh_token = encode_refresh_token(user.id)
                 access_token = encode_access_token(user_id=user.id)
                 response.set_cookie(
                     key="access_token", value=access_token, httponly=True
                 )
+                response.set_cookie(
+                    key="refresh_token", value=refresh_token, httponly=True
+                )
                 print(response)
                 return JWTResponse(
                     access_token=access_token,
+                    refresh_token=refresh_token,
                 )
 
             raise HTTPException(
@@ -190,9 +220,10 @@ async def login_handler(
 
 # 로그아웃 엔드포인트
 @router.post("/logout", summary="로그아웃", status_code=status.HTTP_200_OK)
-async def logout_handler(request: Request) -> Dict[str, str]:
+async def logout_handler(request: Request, response: Response) -> Dict[str, str]:
     try:
         access_token = request.cookies.get("access_token")
+        refresh_token = request.cookies.get("refresh_token")
         if access_token is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="No token provided"
@@ -206,14 +237,108 @@ async def logout_handler(request: Request) -> Dict[str, str]:
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )
 
-        # 토큰을 블랙리스트에 추가하는 기능 필요
-        await blacklist_token(access_token)
+        # 토큰을 블랙리스트에 추가
+        if access_token:
+            await blacklist_token(access_token)
+        if refresh_token:
+            await blacklist_token(refresh_token)
+        # 클라이언트의 쿠키 삭제
+        response.delete_cookie(key="access_token")
+        response.delete_cookie(key="refresh_token")
         return {"detail": "Successfully logged out"}
 
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
+
+
+@router.get(
+    "/kakao/login",
+    status_code=status.HTTP_200_OK,
+)
+def kakao_social_login_handler() -> Response:
+    return RedirectResponse(
+        "https://kauth.kakao.com/oauth/authorize"
+        f"?client_id={settings.KAKAO_CLIENT_ID}"
+        f"&redirect_uri={settings.KAKAO_REDIRECT_URI}"
+        f"&response_type=code",
+    )
+
+
+@router.get("/kakao/callback")
+async def callback(
+    code: str,
+    session: AsyncSession = Depends(get_async_session),
+) -> dict[str, str | UserInfo]:
+    token_url = "https://kauth.kakao.com/oauth/token"
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            token_url,
+            data={
+                "grant_type": "authorization_code",
+                "client_id": settings.KAKAO_CLIENT_ID,
+                "redirect_uri": settings.KAKAO_REDIRECT_URI,
+                "client_secret": settings.KAKAO_CLIENT_SECRET,
+                "code": code,
+            },
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code, detail="Failed to get access token"
+        )
+
+    token_data = response.json()
+    access_token = token_data.get("access_token")
+
+    # 사용자 정보 요청
+    user_info_url = "https://kapi.kakao.com/v2/user/me"
+    async with httpx.AsyncClient() as client:
+        user_info_response = await client.get(
+            user_info_url, headers={"Authorization": f"Bearer {access_token}"}
+        )
+
+    if user_info_response.status_code != 200:
+        raise HTTPException(
+            status_code=user_info_response.status_code, detail="Failed to get user info"
+        )
+
+    user_info = user_info_response.json()
+    user_email = user_info.get("kakao_account", {}).get("email")
+
+    if not user_email:
+        raise HTTPException(status_code=400, detail="Email not provided by Kakao")
+
+    user_repo = UserRepository(session)
+    existing_user = await user_repo.get_user_by_email(user_email)
+
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    new_user = SocialUser(
+        email=user_email,
+        nickname=f'kakao_{user_info.get("id")}',
+        provider="kakao",
+        is_active=True,
+    )
+    user_id = await user_repo.create_user_from_social(new_user)
+
+    user_data = UserInfo(
+        id=user_info.get("id"),
+        nickname=f"kakao_{user_info.get('id')}",
+        email=user_info.get("kakao_account", {}).get("email"),
+        connected_at=user_info.get("connected_at"),
+    )
+
+    access_token = encode_access_token(user_id=user_id)
+    refresh_token = encode_refresh_token(user_id=user_id)
+
+    return {
+        "user_info": user_data,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
 
 
 # 사용자 정보 수정
@@ -224,14 +349,76 @@ async def logout_handler(request: Request) -> Dict[str, str]:
     response_model=UserMeResponse,
 )
 async def update_user(
-    user_data: UpdateRequestBody,  # 사용자 수정 데이터에 대한 Pydantic 모델
     user_id: int = Depends(authenticate),  # 인증된 사용자 ID
+    name: str = Form(...),
+    nickname: str = Form(...),
+    password: str = Form(...),
+    introduce: str = Form(...),
+    image: Union[UploadFile, str] = File(default=None),
     session: AsyncSession = Depends(get_async_session),
-) -> UserMeResponse:
+) -> UserMeResponse | dict[str, str]:
     user_repo = UserRepository(session)  # UserRepository 인스턴스 생성
 
+    user = await user_repo.get_user_by_id(user_id)
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION,
+    )
+    img_url: Optional[str] = None
+    # 이미지 업로드 처리
+    if image and image.filename:  # type: ignore
+        # 유저의 이전 프로필 사진이 s3에 있다면 삭제
+        if user and user.img_url:
+            parsed_url = urlparse(user.img_url)
+            s3_key = parsed_url.path.lstrip("/")
+            try:
+                # S3에서 객체 삭제
+                s3_client.delete_object(Bucket=settings.S3_BUCKET_NAME, Key=s3_key)
+                print("Previous image deleted successfully.")
+            except s3_client.exceptions.NoSuchKey:
+                print("Previous image not found.")
+
+        try:
+            # 파일 포인터 초기화
+            image.file.seek(0)  # type: ignore
+
+            # 고유한 파일명 생성
+            image_filename = (
+                f"profile_{user_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            )
+
+            # S3에 업로드
+            s3_key = f"profiles/{image_filename}"
+            s3_client.upload_fileobj(
+                image.file,  # type: ignore
+                settings.S3_BUCKET_NAME,
+                s3_key,
+                ExtraArgs={"ContentType": image.content_type},  # type: ignore
+            )
+
+            # 공개 URL 생성
+            img_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+
+        except ClientError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"S3 업로드 오류: {str(e)}",
+            )
+
+    # 사용자 데이터 업데이트 (img_url 포함)
+    user_data_dict = {
+        "name": name,
+        "nickname": nickname,
+        "password": password,
+        "introduce": introduce,
+        "img_url": img_url,  # S3에서 받은 URL 또는 None
+    }
+
     try:
-        updated_user = await user_repo.update_user(user_id, user_data)
+        updated_user = await user_repo.update_user(user_id, user_data_dict)
+
     except UserNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
@@ -270,6 +457,7 @@ async def delete_user(
     path="/recovery", summary="계정 복구 가능 여부", status_code=status.HTTP_200_OK
 )
 async def recovery_possible(
+    request: Request,
     user_email: str,
     session: AsyncSession = Depends(get_async_session),
 ) -> dict[str, str]:
@@ -287,7 +475,7 @@ async def recovery_possible(
 
     token = create_verification_token(user.email)
     # 인증 링크 생성
-    recovery_link = f"http://localhost:8000/users/recovery/{token}"
+    recovery_link = f"{request.base_url}users/recovery/{token}"
 
     await send_email(
         to=user.email,
@@ -333,3 +521,18 @@ async def recovery_account(
 
     except jwt.PyJWTError:
         raise HTTPException(status_code=400, detail="Invalid token")
+
+
+@router.post(
+    "/search", summary="닉네임이나 이메일로 유저 검색", status_code=status.HTTP_200_OK
+)
+async def search_users(
+    word: str, session: AsyncSession = Depends(get_async_session)
+) -> list[UserSearchResponse]:
+    user_repo = UserRepository(session)
+    users = await user_repo.search_user(word)
+
+    return [
+        UserSearchResponse(id=user.id, nickname=user.nickname, email=user.email)
+        for user in users
+    ]
