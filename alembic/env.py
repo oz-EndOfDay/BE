@@ -24,6 +24,7 @@ from src.friend.models import *  # noqa
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from src.user.models import *  # noqa
+from src.websocket.models import *  # noqa
 
 target_metadata = Base.metadata
 
