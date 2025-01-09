@@ -31,6 +31,9 @@ celery = "^5.4.0"
 fastapi-pagination = "^0.12.34"
 boto3 = "^1.35.92"
 fastapi-cli = "^0.0.7"
+numpy = "^2.2.1"
+httpx = "^0.28.1"
+openai = "^1.59.5"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -41,6 +44,7 @@ pytest-asyncio = "^0.25.0"
 sqlalchemy = {extras = ["mypy"], version = "^2.0.36"}
 pillow = "^11.1.0"
 moto = {extras = ["all"], version = "^5.0.26"}
+transformers = "^4.47.1"
 openai = "^1.59.5"
 
 [build-system]
