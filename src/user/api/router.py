@@ -209,7 +209,7 @@ async def login_handler(
             )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="This account does not have email verification.",
+            detail="이메일 인증을 받지 않았거나 회원 탈퇴된 계정입니다.",
         )
 
     raise HTTPException(
