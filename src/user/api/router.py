@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
+from urllib.parse import urlparse
 
 import boto3
 import httpx
@@ -41,6 +42,7 @@ from src.user.service.authentication import (
     create_verification_token,
     decode_access_token,
     encode_access_token,
+    encode_refresh_token,
     hash_password,
     verify_password,
 )
@@ -187,14 +189,18 @@ async def login_handler(
     if user is not None and user.id is not None:
         if user.is_active:
             if verify_password(plain_password=password, hashed_password=user.password):
-
+                refresh_token = encode_refresh_token(user.id)
                 access_token = encode_access_token(user_id=user.id)
                 response.set_cookie(
                     key="access_token", value=access_token, httponly=True
                 )
+                response.set_cookie(
+                    key="refresh_token", value=refresh_token, httponly=True
+                )
                 print(response)
                 return JWTResponse(
                     access_token=access_token,
+                    refresh_token=refresh_token,
                 )
 
             raise HTTPException(
@@ -214,9 +220,10 @@ async def login_handler(
 
 # 로그아웃 엔드포인트
 @router.post("/logout", summary="로그아웃", status_code=status.HTTP_200_OK)
-async def logout_handler(request: Request) -> Dict[str, str]:
+async def logout_handler(request: Request, response: Response) -> Dict[str, str]:
     try:
         access_token = request.cookies.get("access_token")
+        refresh_token = request.cookies.get("refresh_token")
         if access_token is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="No token provided"
@@ -230,8 +237,14 @@ async def logout_handler(request: Request) -> Dict[str, str]:
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )
 
-        # 토큰을 블랙리스트에 추가하는 기능 필요
-        await blacklist_token(access_token)
+        # 토큰을 블랙리스트에 추가
+        if access_token:
+            await blacklist_token(access_token)
+        if refresh_token:
+            await blacklist_token(refresh_token)
+        # 클라이언트의 쿠키 삭제
+        response.delete_cookie(key="access_token")
+        response.delete_cookie(key="refresh_token")
         return {"detail": "Successfully logged out"}
 
     except JWTError:
@@ -319,8 +332,13 @@ async def callback(
     )
 
     access_token = encode_access_token(user_id=user_id)
+    refresh_token = encode_refresh_token(user_id=user_id)
 
-    return {"user_info": user_data, "access_token": access_token}
+    return {
+        "user_info": user_data,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
 
 
 # 사용자 정보 수정
@@ -336,55 +354,69 @@ async def update_user(
     nickname: str = Form(...),
     password: str = Form(...),
     introduce: str = Form(...),
-    image: UploadFile = File(None),
+    image: Union[UploadFile, str] = File(default=None),
     session: AsyncSession = Depends(get_async_session),
-) -> UserMeResponse:
+) -> UserMeResponse | dict[str, str]:
     user_repo = UserRepository(session)  # UserRepository 인스턴스 생성
 
-    img_url: Optional[str] = ""
-
-    if image:
+    user = await user_repo.get_user_by_id(user_id)
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION,
+    )
+    img_url: Optional[str] = None
+    # 이미지 업로드 처리
+    if image and image.filename:  # type: ignore
+        # 유저의 이전 프로필 사진이 s3에 있다면 삭제
+        if user and user.img_url:
+            parsed_url = urlparse(user.img_url)
+            s3_key = parsed_url.path.lstrip("/")
+            try:
+                # S3에서 객체 삭제
+                s3_client.delete_object(Bucket=settings.S3_BUCKET_NAME, Key=s3_key)
+                print("Previous image deleted successfully.")
+            except s3_client.exceptions.NoSuchKey:
+                print("Previous image not found.")
 
         try:
-            # 고유한 파일명 생성
-            image_filename = f"profile_{user_id}_{datetime.now()}"
-            s3_key = f"profiles/{image_filename}"
+            # 파일 포인터 초기화
+            image.file.seek(0)  # type: ignore
 
-            # S3 클라이언트 설정
-            s3_client = boto3.client(
-                "s3",
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name=settings.AWS_REGION,
+            # 고유한 파일명 생성
+            image_filename = (
+                f"profile_{user_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
             )
 
-            # S3에 이미지 업로드
+            # S3에 업로드
+            s3_key = f"profiles/{image_filename}"
             s3_client.upload_fileobj(
-                image.file,
+                image.file,  # type: ignore
                 settings.S3_BUCKET_NAME,
                 s3_key,
-                ExtraArgs={"ContentType": image.content_type},
+                ExtraArgs={"ContentType": image.content_type},  # type: ignore
             )
 
             # 공개 URL 생성
             img_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
-            print(img_url)
+
         except ClientError as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"S3 업로드 오류: {str(e)}",
             )
 
-    try:
-        # 사용자 데이터 업데이트 (img_url 포함)
-        user_data_dict = {
-            "name": name,
-            "nickname": nickname,
-            "password": password,
-            "introduce": introduce,
-            "img_url": img_url,  # S3에서 받은 URL 또는 None
-        }
+    # 사용자 데이터 업데이트 (img_url 포함)
+    user_data_dict = {
+        "name": name,
+        "nickname": nickname,
+        "password": password,
+        "introduce": introduce,
+        "img_url": img_url,  # S3에서 받은 URL 또는 None
+    }
 
+    try:
         updated_user = await user_repo.update_user(user_id, user_data_dict)
 
     except UserNotFoundException:
@@ -425,6 +457,7 @@ async def delete_user(
     path="/recovery", summary="계정 복구 가능 여부", status_code=status.HTTP_200_OK
 )
 async def recovery_possible(
+    request: Request,
     user_email: str,
     session: AsyncSession = Depends(get_async_session),
 ) -> dict[str, str]:
@@ -442,7 +475,7 @@ async def recovery_possible(
 
     token = create_verification_token(user.email)
     # 인증 링크 생성
-    recovery_link = f"http://localhost:8000/users/recovery/{token}"
+    recovery_link = f"{request.base_url}users/recovery/{token}"
 
     await send_email(
         to=user.email,
