@@ -17,11 +17,11 @@ class Message(Base):
 
     @classmethod
     def create(
-        cls, user_id: int, friend_id: int, content: str, chat_room_id: int = 0
+        cls, user_id: int, friend_id: int, content: str,
     ) -> "Message":
         return cls(
             user_id=user_id,
             friend_id=friend_id,
             message=content,
-            chat_room_id=chat_room_id,
+
         )

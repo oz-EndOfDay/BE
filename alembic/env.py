@@ -18,6 +18,7 @@ if config.config_file_name is not None:
 from src.diary.models import *  # noqa
 from src.ex_diary.models import *  # noqa
 from src.friend.models import *  # noqa
+from src.websocket.models import *  # noqa
 
 # add your model's MetaData object here
 # for 'autogenerate' support
