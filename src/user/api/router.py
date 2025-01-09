@@ -41,6 +41,7 @@ from src.user.service.authentication import (
     create_verification_token,
     decode_access_token,
     encode_access_token,
+    encode_refresh_token,
     hash_password,
     verify_password,
 )
@@ -187,14 +188,18 @@ async def login_handler(
     if user is not None and user.id is not None:
         if user.is_active:
             if verify_password(plain_password=password, hashed_password=user.password):
-
+                refresh_token = encode_refresh_token(user.id)
                 access_token = encode_access_token(user_id=user.id)
                 response.set_cookie(
                     key="access_token", value=access_token, httponly=True
                 )
+                response.set_cookie(
+                    key="refresh_token", value=refresh_token, httponly=True
+                )
                 print(response)
                 return JWTResponse(
                     access_token=access_token,
+                    refresh_token=refresh_token,
                 )
 
             raise HTTPException(
@@ -214,9 +219,10 @@ async def login_handler(
 
 # 로그아웃 엔드포인트
 @router.post("/logout", summary="로그아웃", status_code=status.HTTP_200_OK)
-async def logout_handler(request: Request) -> Dict[str, str]:
+async def logout_handler(request: Request, response: Response) -> Dict[str, str]:
     try:
         access_token = request.cookies.get("access_token")
+        refresh_token = request.cookies.get("refresh_token")
         if access_token is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="No token provided"
@@ -230,8 +236,14 @@ async def logout_handler(request: Request) -> Dict[str, str]:
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )
 
-        # 토큰을 블랙리스트에 추가하는 기능 필요
-        await blacklist_token(access_token)
+        # 토큰을 블랙리스트에 추가
+        if access_token:
+            await blacklist_token(access_token)
+        if refresh_token:
+            await blacklist_token(refresh_token)
+        # 클라이언트의 쿠키 삭제
+        response.delete_cookie(key="access_token")
+        response.delete_cookie(key="refresh_token")
         return {"detail": "Successfully logged out"}
 
     except JWTError:

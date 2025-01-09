@@ -1,8 +1,13 @@
 import redis.asyncio as redis
 from fastapi import HTTPException, status
 
+from src.config import Settings
+
+settings = Settings()
 # Redis 클라이언트 설정
-redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+redis_client = redis.Redis(
+    host="localhost", port=settings.REDIS_PORT, db=0, decode_responses=True
+)
 
 
 class TokenBlacklist:

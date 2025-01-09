@@ -25,6 +25,7 @@ class UserMeDetailResponse(BaseModel):  # 내 정보를 반환할 때
 
 class JWTResponse(BaseModel):
     access_token: str
+    refresh_token: str
 
 
 class UserSearchResponse(BaseModel):
