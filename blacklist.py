@@ -24,6 +24,7 @@ class TokenBlacklist:
 
 
 async def blacklist_token(token: str, expires_in: int = 3600) -> None:
+    print("블랙리스트에 추가")
     """토큰을 블랙리스트에 추가하는 함수입니다."""
     await TokenBlacklist.add_to_blacklist(token, expires_in)
 

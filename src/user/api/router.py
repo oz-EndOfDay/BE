@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
+from urllib.parse import urlparse
 
 import boto3
 import httpx
@@ -331,8 +332,13 @@ async def callback(
     )
 
     access_token = encode_access_token(user_id=user_id)
+    refresh_token = encode_refresh_token(user_id=user_id)
 
-    return {"user_info": user_data, "access_token": access_token}
+    return {
+        "user_info": user_data,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
 
 
 # 사용자 정보 수정
@@ -348,55 +354,69 @@ async def update_user(
     nickname: str = Form(...),
     password: str = Form(...),
     introduce: str = Form(...),
-    image: UploadFile = File(None),
+    image: Union[UploadFile, str] = File(default=None),
     session: AsyncSession = Depends(get_async_session),
-) -> UserMeResponse:
+) -> UserMeResponse | dict[str, str]:
     user_repo = UserRepository(session)  # UserRepository 인스턴스 생성
 
-    img_url: Optional[str] = ""
-
-    if image:
+    user = await user_repo.get_user_by_id(user_id)
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION,
+    )
+    img_url: Optional[str] = None
+    # 이미지 업로드 처리
+    if image and image.filename:  # type: ignore
+        # 유저의 이전 프로필 사진이 s3에 있다면 삭제
+        if user and user.img_url:
+            parsed_url = urlparse(user.img_url)
+            s3_key = parsed_url.path.lstrip("/")
+            try:
+                # S3에서 객체 삭제
+                s3_client.delete_object(Bucket=settings.S3_BUCKET_NAME, Key=s3_key)
+                print("Previous image deleted successfully.")
+            except s3_client.exceptions.NoSuchKey:
+                print("Previous image not found.")
 
         try:
-            # 고유한 파일명 생성
-            image_filename = f"profile_{user_id}_{datetime.now()}"
-            s3_key = f"profiles/{image_filename}"
+            # 파일 포인터 초기화
+            image.file.seek(0)  # type: ignore
 
-            # S3 클라이언트 설정
-            s3_client = boto3.client(
-                "s3",
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name=settings.AWS_REGION,
+            # 고유한 파일명 생성
+            image_filename = (
+                f"profile_{user_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
             )
 
-            # S3에 이미지 업로드
+            # S3에 업로드
+            s3_key = f"profiles/{image_filename}"
             s3_client.upload_fileobj(
-                image.file,
+                image.file,  # type: ignore
                 settings.S3_BUCKET_NAME,
                 s3_key,
-                ExtraArgs={"ContentType": image.content_type},
+                ExtraArgs={"ContentType": image.content_type},  # type: ignore
             )
 
             # 공개 URL 생성
             img_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
-            print(img_url)
+
         except ClientError as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"S3 업로드 오류: {str(e)}",
             )
 
-    try:
-        # 사용자 데이터 업데이트 (img_url 포함)
-        user_data_dict = {
-            "name": name,
-            "nickname": nickname,
-            "password": password,
-            "introduce": introduce,
-            "img_url": img_url,  # S3에서 받은 URL 또는 None
-        }
+    # 사용자 데이터 업데이트 (img_url 포함)
+    user_data_dict = {
+        "name": name,
+        "nickname": nickname,
+        "password": password,
+        "introduce": introduce,
+        "img_url": img_url,  # S3에서 받은 URL 또는 None
+    }
 
+    try:
         updated_user = await user_repo.update_user(user_id, user_data_dict)
 
     except UserNotFoundException:
