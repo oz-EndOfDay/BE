@@ -160,7 +160,7 @@ def authenticate(
                 value=new_access_token,
                 httponly=True,  # JavaScript 접근 불가
                 max_age=3600,
-                # secure=True,  # HTTPS만 허용
+                secure=True,  # HTTPS만 허용
                 samesite=None,
                 domain="localhost:3000",
             )
