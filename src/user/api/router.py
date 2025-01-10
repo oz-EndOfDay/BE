@@ -196,6 +196,7 @@ async def login_handler(
                     value=access_token,
                     httponly=True,
                     samesite="lax",
+                    max_age=3600,
                 )
                 response.set_cookie(
                     key="refresh_token", value=refresh_token, httponly=True
