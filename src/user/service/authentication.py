@@ -180,7 +180,7 @@ def authenticate(
                 max_age=3600,
                 secure=True,  # HTTPS만 허용
                 samesite=None,
-                domain="localhost:3000",
+                domain="43.200.255.244",
             )
             payload = decode_access_token(access_token=new_access_token)
 
