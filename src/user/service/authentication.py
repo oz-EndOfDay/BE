@@ -17,7 +17,7 @@ settings = Settings()
 
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 REFRESH_TOKEN_EXPIRE_DAYS = 30
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -39,12 +39,14 @@ def verify_password(plain_password: str, hashed_password: str | None) -> bool:
 class JWTPayload(TypedDict):
     user_id: int
     isa: int
+    exp: int
 
 
 def encode_access_token(user_id: int) -> str:
     payload: JWTPayload = {
         "user_id": user_id,
         "isa": int(time.time()),
+        "exp": int(time.time() + ACCESS_TOKEN_EXPIRE_MINUTES * 60),
     }
     access_token: str = jwt.encode(
         cast(dict[str, Any], payload), SECRET_KEY, algorithm=ALGORITHM
