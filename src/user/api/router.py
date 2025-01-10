@@ -192,7 +192,11 @@ async def login_handler(
                 refresh_token = encode_refresh_token(user.id)
                 access_token = encode_access_token(user_id=user.id)
                 response.set_cookie(
-                    key="access_token", value=access_token, httponly=True
+                    key="access_token",
+                    value=access_token,
+                    httponly=True,
+                    samesite="lax",
+                    max_age=3600,
                 )
                 response.set_cookie(
                     key="refresh_token", value=refresh_token, httponly=True
