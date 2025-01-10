@@ -42,21 +42,27 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 # FastAPI 앱 생성 with lifespan
 app = FastAPI(lifespan=lifespan)
 # 라우터 포함
+
+origins = [
+    "http://43.200.225.244",  # 불필요한 http:// 중복 제거
+    "http://ec2-43-200-225-244.ap-northeast-2.compute.amazonaws.com",  # 오타 수정
+    "http://localhost:3000",  # 개발 환경용
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(user_router)
 app.include_router(friend_router)
 app.include_router(diary_router)
 app.include_router(ex_diary_router)
 app.include_router(websocket_router)
 add_pagination(app)
-
-# CORS 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 모든 오리진 허용 (개발 환경)
-    allow_credentials=True,
-    allow_methods=["*"],  # 모든 HTTP 메서드 허용
-    allow_headers=["*"],  # 모든 헤더 허용
-)
 
 
 # 기본 루트 핸들러
