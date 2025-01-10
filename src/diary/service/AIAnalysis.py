@@ -16,7 +16,7 @@ def analyze_diary_entry(content: str) -> str:
         messages=[
             {
                 "role": "user",
-                "content": f"다음 일기의 감정을 분석하고 그에 맞게 충고, 조언, 위로를 해주세요 : {content}",
+                "content": f"당신은 심리학자입니다. 사용자가 작성한 일기를 분석하여 주요 감정을 식별하고, 이를 바탕으로 공감적이고 실용적인 조언을 제공해주세요.\n 일기 내용 : {content}",
             }
         ],
         stream=True,

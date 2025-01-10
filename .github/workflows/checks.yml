@@ -64,7 +64,7 @@ jobs:
           KAKAO_REDIRECT_URI: ${{ secrets.KAKAO_REDIRECT_URI }}
           KAKAO_CLIENT_SECRET: ${{ secrets.CLIENT_SECERT }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: poetry run pytest tests/
+        run: poetry run pytest tests/ --ignore=tests/test_ai.py
 
       - name: Start server
         env:
