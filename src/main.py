@@ -63,6 +63,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # 기본 루트 핸들러
 @app.get("/")
 async def root() -> dict[str, str]:
