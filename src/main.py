@@ -44,9 +44,10 @@ app = FastAPI(lifespan=lifespan)
 # 라우터 포함
 
 origins = [
-    "http://43.200.225.244",  # 불필요한 http:// 중복 제거
-    "http://ec2-43-200-225-244.ap-northeast-2.compute.amazonaws.com",  # 오타 수정
-    "http://localhost:3000",  # 개발 환경용
+    "http://43.200.225.244",
+    "https://43.200.225.244",
+    "http://localhost:3000",
+    "https://localhost:3000",
 ]
 
 app.add_middleware(
