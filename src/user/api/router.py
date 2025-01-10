@@ -27,7 +27,7 @@ from src.config import Settings
 from src.config.database.connection import get_async_session
 from src.user.models import User
 from src.user.repository import UserNotFoundException, UserRepository
-from src.user.schema.request import CreateRequestBody, UpdateRequestBody
+from src.user.schema.request import CreateRequestBody, LoginRequest, UpdateRequestBody
 from src.user.schema.response import (
     JWTResponse,
     SocialUser,
@@ -178,17 +178,18 @@ async def verify_email(
     status_code=status.HTTP_200_OK,
 )
 async def login_handler(
-    email: str,
-    password: str,
+    login_data: LoginRequest,
     response: Response,
     session: AsyncSession = Depends(get_async_session),
 ) -> JWTResponse:
     user_repo = UserRepository(session)
-    user = await user_repo.get_user_by_email(email)
+    user = await user_repo.get_user_by_email(login_data.email)
 
     if user is not None and user.id is not None:
         if user.is_active:
-            if verify_password(plain_password=password, hashed_password=user.password):
+            if verify_password(
+                plain_password=login_data.password, hashed_password=user.password
+            ):
                 refresh_token = encode_refresh_token(user.id)
                 access_token = encode_access_token(user_id=user.id)
                 response.set_cookie(
