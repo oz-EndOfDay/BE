@@ -5,7 +5,6 @@ from datetime import date, datetime
 from typing import Optional, Union
 
 import boto3
-import openai
 from botocore.exceptions import ClientError
 from fastapi import (
     APIRouter,
@@ -29,13 +28,14 @@ from src.diary.schema.response import (
     DiaryDetailResponse,
     DiaryListResponse,
 )
-from src.diary.service.AIAnalysis import AIAnalysisService
+from src.diary.service.AIAnalysis import analyze_diary_entry
 from src.user.service.authentication import authenticate
 
 router = APIRouter(prefix="/diary", tags=["Diary"])
 settings = Settings()
 
 logger = logging.getLogger(__name__)
+
 
 @router.post(
     path="",
@@ -267,38 +267,35 @@ async def restore_diary(
     response_model=DiaryAnalysisResponse,
 )
 async def analyze_diary(
-        diary_id: int = Path(...),
-        user_id: int = Depends(authenticate),
-        diary_repo: DiaryRepository = Depends(),
-        ai_service: AIAnalysisService = Depends(),
+    diary_id: int = Path(...),
+    user_id: int = Depends(authenticate),
+    diary_repo: DiaryRepository = Depends(),
 ) -> DiaryAnalysisResponse:
     diary = await diary_repo.get_diary_detail(diary_id=diary_id)
 
     if not diary:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="일기를 찾을 수 없습니다."
+            status_code=status.HTTP_404_NOT_FOUND, detail="일기를 찾을 수 없습니다."
         )
 
     if diary.user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="본인의 일기만 분석할 수 있습니다."
+            detail="본인의 일기만 분석할 수 있습니다.",
         )
-
-    # 토큰 사용량 최적화를 위한 텍스트 전처리
-    content = diary.content[:1000]  # 최대 1000자로 제한
 
     try:
-        analysis = await ai_service.analyze_diary_entry(content)
+        # diary.content가 None일 가능성을 대비해 처리
+        diary_content = diary.content or ""
+        analysis_result = analyze_diary_entry(diary_content)
+
         return DiaryAnalysisResponse(
-            diary_id=diary.id,
-            mood_analysis=analysis.mood_analysis,
-            emotional_insights=analysis.emotional_insights,
-            advice=analysis.advice
+            diary_id=diary_id,
+            diary_content=diary_content,
+            analysis_result=analysis_result,
         )
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="일시적인 서비스 오류입니다."
+            detail="일시적인 서비스 오류입니다.",
         )

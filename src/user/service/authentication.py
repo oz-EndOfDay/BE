@@ -64,10 +64,26 @@ def encode_refresh_token(user_id: int) -> str:
     return refresh_token
 
 
+# def decode_access_token(access_token: str) -> JWTPayload:
+#     return cast(
+#         JWTPayload, jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+#     )
 def decode_access_token(access_token: str) -> JWTPayload:
-    return cast(
-        JWTPayload, jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-    )
+    try:
+        # 엄격한 디코딩 검증
+        payload = jwt.decode(
+            access_token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+            options={"verify_signature": True, "require_exp": True, "verify_exp": True},
+        )
+        return payload
+    except jwt.ExpiredSignatureError:
+        # 토큰 만료 처리
+        raise HTTPException(status_code=401, detail="토큰이 만료되었습니다")
+    except jwt.InvalidTokenError:
+        # 토큰 유효성 검증 실패
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다")
 
 
 def decode_refresh_token(refresh_token: str) -> JWTPayload:

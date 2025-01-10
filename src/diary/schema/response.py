@@ -44,6 +44,5 @@ class DiaryDetailResponse(BaseModel):
 
 class DiaryAnalysisResponse(BaseModel):
     diary_id: int
-    mood_analysis: str
-    emotional_insights: str
-    advice: str
+    diary_content: str
+    analysis_result: str
