@@ -42,12 +42,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 # FastAPI 앱 생성 with lifespan
 app = FastAPI(lifespan=lifespan)
 # 라우터 포함
-app.include_router(user_router)
-app.include_router(friend_router)
-app.include_router(diary_router)
-app.include_router(ex_diary_router)
-app.include_router(websocket_router)
-add_pagination(app)
 
 origins = [
     "http://43.200.225.244",  # 불필요한 http:// 중복 제거
@@ -62,6 +56,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(user_router)
+app.include_router(friend_router)
+app.include_router(diary_router)
+app.include_router(ex_diary_router)
+app.include_router(websocket_router)
+add_pagination(app)
 
 
 # 기본 루트 핸들러
