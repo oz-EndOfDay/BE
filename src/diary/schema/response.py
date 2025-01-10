@@ -40,3 +40,9 @@ class DiaryDetailResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class DiaryAnalysisResponse(BaseModel):
+    diary_id: int
+    diary_content: str
+    analysis_result: str
