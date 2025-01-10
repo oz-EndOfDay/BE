@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     KAKAO_CLIENT_ID: str
     KAKAO_REDIRECT_URI: str
     KAKAO_CLIENT_SECRET: str
+    OPENAI_API_KEY: str
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"

@@ -63,6 +63,7 @@ jobs:
           KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
           KAKAO_REDIRECT_URI: ${{ secrets.KAKAO_REDIRECT_URI }}
           KAKAO_CLIENT_SECRET: ${{ secrets.CLIENT_SECERT }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: poetry run pytest tests/
 
       - name: Start server
@@ -80,6 +81,7 @@ jobs:
           KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
           KAKAO_REDIRECT_URI: ${{ secrets.KAKAO_REDIRECT_URI }}
           KAKAO_CLIENT_SECRET: ${{ secrets.CLIENT_SECERT }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 &
           sleep 5

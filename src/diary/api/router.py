@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from datetime import date, datetime
@@ -22,14 +23,18 @@ from src.config import Settings
 from src.diary.models import Diary, MoodEnum, WeatherEnum
 from src.diary.repository import DiaryRepository
 from src.diary.schema.response import (
+    DiaryAnalysisResponse,
     DiaryBriefResponse,
     DiaryDetailResponse,
     DiaryListResponse,
 )
+from src.diary.service.AIAnalysis import analyze_diary_entry
 from src.user.service.authentication import authenticate
 
 router = APIRouter(prefix="/diary", tags=["Diary"])
 settings = Settings()
+
+logger = logging.getLogger(__name__)
 
 
 @router.post(
@@ -253,3 +258,44 @@ async def restore_diary(
         )
 
     return DiaryDetailResponse.model_validate(restored_diary)  # type: ignore
+
+
+@router.post(
+    path="/{diary_id}/analysis",
+    summary="일기 감정 분석 및 조언 생성",
+    status_code=status.HTTP_200_OK,
+    response_model=DiaryAnalysisResponse,
+)
+async def analyze_diary(
+    diary_id: int = Path(...),
+    user_id: int = Depends(authenticate),
+    diary_repo: DiaryRepository = Depends(),
+) -> DiaryAnalysisResponse:
+    diary = await diary_repo.get_diary_detail(diary_id=diary_id)
+
+    if not diary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="일기를 찾을 수 없습니다."
+        )
+
+    if diary.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="본인의 일기만 분석할 수 있습니다.",
+        )
+
+    try:
+        # diary.content가 None일 가능성을 대비해 처리
+        diary_content = diary.content or ""
+        analysis_result = analyze_diary_entry(diary_content)
+
+        return DiaryAnalysisResponse(
+            diary_id=diary_id,
+            diary_content=diary_content,
+            analysis_result=analysis_result,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="일시적인 서비스 오류입니다.",
+        )
