@@ -52,7 +52,7 @@ add_pagination(app)
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 모든 오리진 허용 (개발 환경)
+    allow_origins=["http://localhost:3000"],  # 모든 오리진 허용 (개발 환경)
     allow_credentials=True,
     allow_methods=["*"],  # 모든 HTTP 메서드 허용
     allow_headers=["*"],  # 모든 헤더 허용
