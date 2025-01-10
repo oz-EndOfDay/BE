@@ -200,6 +200,7 @@ async def login_handler(
                     secure=False,
                     samesite=None,
                     max_age=3600,
+                    domain="localhost:3000",
                 )
                 response.set_cookie(
                     key="refresh_token", value=refresh_token, httponly=True

@@ -161,7 +161,8 @@ def authenticate(
                 httponly=True,  # JavaScript 접근 불가
                 max_age=3600,
                 # secure=True,  # HTTPS만 허용
-                samesite="lax",
+                samesite=None,
+                domain="localhost:3000",
             )
             payload = decode_access_token(access_token=new_access_token)
 
