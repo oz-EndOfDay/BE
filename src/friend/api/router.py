@@ -18,6 +18,9 @@ from src.friend.schema.response import (
     FriendResponse,
     FriendsListResponse,
 )
+from src.notification.models import Notification
+from src.notification.repository import NotificationRepository
+from src.notification.service.websocket import manager
 from src.user.repository import UserRepository
 from src.user.service.authentication import authenticate
 
@@ -36,7 +39,7 @@ async def send_friend_request_by_id(
 ) -> FriendRequestByEmailResponse:
     user_repo = UserRepository(session)
     friend_repo = FriendRepository(session)
-
+    current_user = await user_repo.get_user_by_id(current_user_id)
     target_user = await user_repo.get_user_by_id(user_id)
     if not target_user:
         raise HTTPException(
@@ -55,6 +58,16 @@ async def send_friend_request_by_id(
 
     # 친구 신청 생성
     try:
+        message = f"{current_user.nickname} 님이 친구요청을 보내셨습니다."
+        notification = Notification(
+            user_id=target_user.id, title="친구 요청", message=message
+        )
+
+        noti_repo = NotificationRepository(session)
+        await noti_repo.create_notification(notification)
+
+        await manager.broadcast(f"Notification for user {target_user.id}: {message}")
+
         await friend_repo.create_friend_request(current_user_id, target_user.id)
         return FriendRequestByEmailResponse(success=True, message="친구 신청 완료.")
     except Exception as e:
