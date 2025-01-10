@@ -47,7 +47,7 @@ add_pagination(app)
 origins = [
     "http://http://43.200.225.244",
     "http:ec2-43-200-225-244.ap-northeast-2.compute.amazonaws.com",
-    "http://localhost:3000"  # 개발 환경용
+    "http://localhost:3000",  # 개발 환경용
 ]
 
 app.add_middleware(
