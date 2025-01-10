@@ -17,7 +17,7 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import RedirectResponse
@@ -27,7 +27,7 @@ from src.config import Settings
 from src.config.database.connection import get_async_session
 from src.user.models import User
 from src.user.repository import UserNotFoundException, UserRepository
-from src.user.schema.request import CreateRequestBody, UpdateRequestBody
+from src.user.schema.request import CreateRequestBody, LoginRequest, UpdateRequestBody
 from src.user.schema.response import (
     JWTResponse,
     SocialUser,
@@ -44,6 +44,8 @@ from src.user.service.authentication import (
     encode_access_token,
     encode_refresh_token,
     hash_password,
+    is_refresh_token_expired,
+    refresh_access_token,
     verify_password,
 )
 from src.user.service.smtp import send_email
@@ -51,7 +53,6 @@ from src.user.service.smtp import send_email
 settings = Settings()
 
 router = APIRouter(prefix="/users", tags=["User"])
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 # 유저 생성 (회원가입)
@@ -178,25 +179,28 @@ async def verify_email(
     status_code=status.HTTP_200_OK,
 )
 async def login_handler(
-    email: str,
-    password: str,
+    login_data: LoginRequest,
     response: Response,
     session: AsyncSession = Depends(get_async_session),
 ) -> JWTResponse:
     user_repo = UserRepository(session)
-    user = await user_repo.get_user_by_email(email)
+    user = await user_repo.get_user_by_email(login_data.email)
 
     if user is not None and user.id is not None:
         if user.is_active:
-            if verify_password(plain_password=password, hashed_password=user.password):
+            if verify_password(
+                plain_password=login_data.password, hashed_password=user.password
+            ):
                 refresh_token = encode_refresh_token(user.id)
                 access_token = encode_access_token(user_id=user.id)
                 response.set_cookie(
                     key="access_token",
                     value=access_token,
                     httponly=True,
-                    samesite="lax",
+                    secure=True,
+                    samesite=None,
                     max_age=3600,
+                    domain="localhost:3000",
                 )
                 response.set_cookie(
                     key="refresh_token", value=refresh_token, httponly=True
@@ -540,3 +544,17 @@ async def search_users(
         UserSearchResponse(id=user.id, nickname=user.nickname, email=user.email)
         for user in users
     ]
+
+
+@router.post("/refresh-token", summary="리프레쉬토큰으로 액세스토큰 재발급")
+async def refresh_access_token_endpoint(
+    refresh_token: HTTPAuthorizationCredentials,
+) -> dict[str, str]:
+    is_expired = is_refresh_token_expired(refresh_token=refresh_token.credentials)
+    if is_expired:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="리프레쉬 토큰이 만료되었습니다.",
+        )
+    new_access_token = refresh_access_token(refresh_token.credentials)
+    return {"access_token": new_access_token}

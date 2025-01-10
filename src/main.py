@@ -49,13 +49,18 @@ app.include_router(ex_diary_router)
 app.include_router(websocket_router)
 add_pagination(app)
 
-# CORS 설정
+origins = [
+    "http://http://43.200.225.244",
+    "http:ec2-43-200-225-244.ap-northeast-2.compute.amazonaws.com",
+    "http://localhost:3000",  # 개발 환경용
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 모든 오리진 허용 (개발 환경)
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],  # 모든 HTTP 메서드 허용
-    allow_headers=["*"],  # 모든 헤더 허용
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
