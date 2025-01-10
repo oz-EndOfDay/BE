@@ -50,8 +50,8 @@ app.include_router(websocket_router)
 add_pagination(app)
 
 origins = [
-    "http://http://43.200.225.244",
-    "http:ec2-43-200-225-244.ap-northeast-2.compute.amazonaws.com",
+    "http://43.200.225.244",  # 불필요한 http:// 중복 제거
+    "http://ec2-43-200-225-244.ap-northeast-2.compute.amazonaws.com",  # 오타 수정
     "http://localhost:3000",  # 개발 환경용
 ]
 
