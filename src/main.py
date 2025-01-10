@@ -65,8 +65,6 @@ app.include_router(websocket_router)
 add_pagination(app)
 
 
-
-
 # 기본 루트 핸들러
 @app.get("/")
 async def root() -> dict[str, str]:
