@@ -14,7 +14,10 @@ def analyze_diary_entry(content: str) -> str:
     stream = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "user", "content": f"다음 일기의 감정을 분석해주세요: {content}"}
+            {
+                "role": "user",
+                "content": f"다음 일기의 감정을 분석하고 그에 맞게 충고, 조언, 위로를 해주세요 : {content}",
+            }
         ],
         stream=True,
     )
