@@ -29,7 +29,7 @@ router = APIRouter(prefix="/friends", tags=["Friend"])
     summary="친구 신청 (검색된 친구에서 친구 id 값을 담아 요청)",
     response_model=FriendRequestByEmailResponse,
 )
-async def send_friend_request_by_email(
+async def send_friend_request_by_id(
     user_id: int,
     current_user_id: int = Depends(authenticate),  # 현재 인증된 사용자의 ID
     session: AsyncSession = Depends(get_async_session),
