@@ -2,7 +2,7 @@ import logging
 import os
 import uuid
 from datetime import date, datetime
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import boto3
 from botocore.exceptions import ClientError
@@ -27,6 +27,7 @@ from src.diary.schema.response import (
     DiaryBriefResponse,
     DiaryDetailResponse,
     DiaryListResponse,
+    MoodStatisticsResponse,
 )
 from src.diary.service.AIAnalysis import analyze_diary_entry
 from src.user.service.authentication import authenticate
@@ -186,6 +187,34 @@ async def diary_list_deleted(
         )
 
     return DiaryListResponse.build(diaries=list(diaries))
+
+
+@router.get(
+    path="/mood-stats",
+    summary="사용자의 기분 통계 조회",
+    response_model=MoodStatisticsResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_mood_statistics(
+    user_id: int = Depends(authenticate),
+    diary_repo: DiaryRepository = Depends(),
+) -> MoodStatisticsResponse:
+    """
+    사용자가 작성한 일기들에서 기분별 개수를 반환합니다.
+    """
+    try:
+        # 사용자의 모든 일기를 가져오기
+        user_diaries = await diary_repo.get_all_by_user(user_id)
+
+        # 기분별 개수 집계
+        mood_stats = {mood: 0 for mood in MoodEnum}
+        for diary in user_diaries:
+            mood_stats[diary.mood] += 1
+
+        return MoodStatisticsResponse.build(mood_stats=mood_stats)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"통계 계산 중 오류 발생: {str(e)}")
 
 
 @router.get(

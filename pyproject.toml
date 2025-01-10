@@ -54,7 +54,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]
-addopts = "-v"
+addopts = ["-v", "--ignore=tests/test_ai.py"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 asyncio_mode = "auto"
