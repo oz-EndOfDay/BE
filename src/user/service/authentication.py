@@ -174,7 +174,9 @@ def authenticate(
                 value=new_access_token,
                 httponly=True,
                 secure=True,
-                samesite="lax",
+                samesite="none",  # 'lax'에서 'none'으로 변경
+                path='/',  # 경로 추가
+                max_age=3600  # 만료 시간 추가
             )
 
             return payload["user_id"]
@@ -188,6 +190,7 @@ def authenticate(
 
     except JWTError:
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰")
+
 
 
 def create_verification_token(email: str) -> str:
