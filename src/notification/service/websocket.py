@@ -1,6 +1,6 @@
 from typing import Dict
 
-from fastapi import WebSocket, WebSocketDisconnect, APIRouter
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
 
@@ -25,7 +25,9 @@ class ConnectionManager:
         for connection in self.active_connections.values():
             await connection.send_text(message)
 
+
 manager = ConnectionManager()
+
 
 @router.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: int) -> None:

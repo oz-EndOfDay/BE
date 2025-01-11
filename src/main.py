@@ -16,13 +16,14 @@ from src.diary.api.router import router as diary_router
 from src.ex_diary.api.router import router as ex_diary_router
 from src.friend.api.router import router as friend_router
 from src.notification.api.router import router as notification_router
+from src.notification.service.websocket import router as w_router
 
 # 라우터 import
 from src.user.api.router import router as user_router
 from src.user.models import Base
 from src.user.service.tasks import periodic_cleanup
 from src.websocket.api.router import router as websocket_router
-from src.notification.service.websocket import router as w_router
+
 logger = logging.getLogger(__name__)
 
 

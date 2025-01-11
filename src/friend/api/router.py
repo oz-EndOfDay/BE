@@ -56,7 +56,6 @@ async def send_friend_request_by_id(
     if target_user.id == current_user_id:
         raise HTTPException(status_code=400, detail="자신을 친구로 등록할 수 없습니다.")
 
-
     # 친구 신청 생성
     try:
         if not current_user:
@@ -72,8 +71,7 @@ async def send_friend_request_by_id(
         await noti_repo.create_notification(notification)
 
         await manager.send_personal_message(
-            message="새로운 알림이 있습니다.",
-            user_id=target_user.id
+            message="새로운 알림이 있습니다.", user_id=target_user.id
         )
 
         await friend_repo.create_friend_request(current_user_id, target_user.id)
