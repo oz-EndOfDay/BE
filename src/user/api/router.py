@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, Union
 from urllib.parse import urlparse
 
@@ -202,7 +202,8 @@ async def login_handler(
                     samesite="none",  # 크로스 도메인이므로 none으로 설정
                     path="/",
                     max_age=3600,  # 1시간
-                    expires=3600,  # expires 추가
+                    expires=datetime.now(timezone.utc)
+                    + timedelta(hours=1),  # expires 추가
                     domain="endofday.store",
                 )
 
@@ -214,7 +215,8 @@ async def login_handler(
                     samesite="none",
                     path="/",
                     max_age=30 * 24 * 3600,  # 30일
-                    expires=30 * 24 * 3600,  # expires 추가
+                    expires=datetime.now(timezone.utc)
+                    + timedelta(days=30),  # expires 추가
                     domain="endofday.store",
                 )
 
