@@ -15,6 +15,8 @@ from src.config.database.orm import Base
 from src.diary.api.router import router as diary_router
 from src.ex_diary.api.router import router as ex_diary_router
 from src.friend.api.router import router as friend_router
+from src.notification.api.router import router as notification_router
+from src.notification.service.websocket import router as w_router
 
 # 라우터 import
 from src.user.api.router import router as user_router
@@ -44,6 +46,7 @@ app = FastAPI(lifespan=lifespan)
 # 라우터 포함
 
 origins = [
+    "https://fe-three-omega.vercel.app",
     "http://43.200.225.244",
     "https://43.200.225.244",
     "http://localhost:3000",
@@ -62,7 +65,9 @@ app.include_router(user_router)
 app.include_router(friend_router)
 app.include_router(diary_router)
 app.include_router(ex_diary_router)
+app.include_router(notification_router)
 app.include_router(websocket_router)
+app.include_router(w_router)
 add_pagination(app)
 
 
