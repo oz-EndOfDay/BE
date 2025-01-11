@@ -46,8 +46,8 @@ app = FastAPI(lifespan=lifespan)
 # 라우터 포함
 
 origins = [
-    "http://www.endofday.store",
     "https://www.endofday.store",
+    "https://endofday.store",
     "http://localhost:3000",
     "https://localhost:3000",
     "https://fe-three-omega.vercel.app",
@@ -56,7 +56,7 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,  # 이미 True로 설정됨
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
