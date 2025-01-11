@@ -46,11 +46,11 @@ app = FastAPI(lifespan=lifespan)
 # 라우터 포함
 
 origins = [
-    "https://fe-three-omega.vercel.app",
-    "http://43.200.225.244",
-    "https://43.200.225.244",
+    "http://www.endofday.store",
+    "https://www.endofday.store",
     "http://localhost:3000",
     "https://localhost:3000",
+    "https://fe-three-omega.vercel.app",
 ]
 
 app.add_middleware(
