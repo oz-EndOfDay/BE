@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, TypedDict, cast
 
 import jwt
-from fastapi import Depends, HTTPException, Response
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import Depends, HTTPException, Request, Response
+from fastapi.security import HTTPBearer
 from jose import JWTError
 from passlib.context import CryptContext
 from starlette import status
@@ -153,44 +153,41 @@ def is_refresh_token_expired(
 
 
 def authenticate(
+    request: Request,
     response: Response,
-    auth_header: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
-    refresh_token: str = Depends(HTTPBearer()),
 ) -> int:
-    try:
-        # 인증 성공
-        payload: JWTPayload = decode_access_token(access_token=auth_header.credentials)
+    access_token = request.cookies.get("access_token")
+    refresh_token = request.cookies.get("refresh_token")
 
-        # token 만료 검사
-        expiry_seconds = 60 * 60 * 24 * 7
-        if payload["isa"] + expiry_seconds < time.time():
-            # 액세스 토큰이 만료된 경우 리프레시 토큰으로 새로운 액세스 토큰 발급
-            is_expired = is_refresh_token_expired(refresh_token=refresh_token)
-            if not refresh_token or is_expired:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="다시 로그인 해주세요.",
-                )
-            new_access_token = refresh_access_token(refresh_token)
+    if not access_token:
+        if not refresh_token:
+            raise HTTPException(status_code=401, detail="로그인 필요")
 
+        # 리프레시 토큰으로 새 액세스 토큰 발급
+        try:
+            payload = decode_refresh_token(refresh_token)
+            new_access_token = encode_access_token(payload["user_id"])
+
+            # 새 쿠키 자동 설정
             response.set_cookie(
                 key="access_token",
                 value=new_access_token,
-                httponly=True,  # JavaScript 접근 불가
-                max_age=3600,
-                secure=True,  # HTTPS만 허용
-                samesite=None,
-                domain="43.200.255.244",
+                httponly=True,
+                secure=True,
+                samesite="lax",
             )
-            payload = decode_access_token(access_token=new_access_token)
 
-        return payload["user_id"]  # 또는 사용자 ID를 반환할 수 있음
+            return payload["user_id"]
+
+        except JWTError:
+            raise HTTPException(status_code=401, detail="다시 로그인")
+
+    try:
+        payload = decode_access_token(access_token)
+        return payload["user_id"]
 
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid access token",
-        )
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰")
 
 
 def create_verification_token(email: str) -> str:
