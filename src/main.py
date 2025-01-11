@@ -56,10 +56,11 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=True,  # 이미 True로 설정됨
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 app.include_router(user_router)
 app.include_router(friend_router)
