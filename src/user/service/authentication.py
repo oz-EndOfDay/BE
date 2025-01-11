@@ -174,7 +174,9 @@ def authenticate(
                 value=new_access_token,
                 httponly=True,
                 secure=True,
-                samesite="lax",
+                samesite="none",  # 'lax'에서 'none'으로 변경
+                path="/",  # 경로 추가
+                max_age=3600,  # 만료 시간 추가
             )
 
             return payload["user_id"]
