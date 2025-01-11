@@ -194,26 +194,25 @@ async def login_handler(
                 refresh_token = encode_refresh_token(user.id)
                 access_token = encode_access_token(user_id=user.id)
 
-                # 액세스 토큰 쿠키 설정
                 response.set_cookie(
                     key="access_token",
                     value=access_token,
-                    httponly=True,  # JavaScript 접근 방지
-                    secure=True,  # HTTPS only
-                    samesite="lax",  # CSRF 보호
-                    path="/",  # 전체 도메인 접근
-                    max_age=3600,  # 1시간 유효
+                    httponly=True,
+                    secure=True,
+                    samesite="none",  # 크로스 도메인 환경에서는 "none" 권장
+                    path="/",
+                    max_age=3600,
+                    domain=None,  # 모든 서브도메인에서 접근 가능
                 )
 
-                # 리프레시 토큰 쿠키 설정
                 response.set_cookie(
                     key="refresh_token",
                     value=refresh_token,
                     httponly=True,
                     secure=True,
-                    samesite="lax",
+                    samesite="none",
                     path="/",
-                    max_age=30 * 24 * 3600,  # 30일 유효
+                    max_age=30 * 24 * 3600,
                 )
 
                 return JWTResponse(
