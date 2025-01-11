@@ -10,14 +10,15 @@ class NotificationRepository:
     def __init__(self, session: AsyncSession = Depends(get_async_session)):
         self.session = session
 
-    async def create_notification(self, notification: Notification) -> None:
+    async def create_notification(self, notification: Notification) -> Notification:
         self.session.add(notification)
         await self.session.commit()
         await self.session.refresh(notification)
+        return notification
 
     async def mark_as_read(self, notification_id: int) -> bool:
         result = await self.session.execute(
-            select(Notification).filter_by(notification_id=notification_id)
+            select(Notification).filter_by(id=notification_id)
         )
         notification = result.scalar_one_or_none()
 
