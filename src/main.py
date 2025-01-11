@@ -46,10 +46,10 @@ app = FastAPI(lifespan=lifespan)
 # 라우터 포함
 
 origins = [
-    "https://www.endofday.store",
-    "https://endofday.store",
     "http://localhost:3000",
     "https://localhost:3000",
+    "https://endofday.store",
+    "https://www.endofday.store",
     "https://fe-three-omega.vercel.app",
 ]
 
@@ -59,6 +59,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Set-Cookie"],
 )
 
 

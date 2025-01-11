@@ -198,11 +198,12 @@ async def login_handler(
                     key="access_token",
                     value=access_token,
                     httponly=True,
-                    secure=True,
-                    samesite="none",
+                    secure=True,  # HTTPS 사용하므로 True 유지
+                    samesite="none",  # 크로스 도메인이므로 none으로 설정
                     path="/",
-                    max_age=3600,
-                    domain=".endofday.store",  # 명시적인 도메인 설정
+                    max_age=3600,  # 1시간
+                    expires=3600,  # expires 추가
+                    domain="endofday.store",
                 )
 
                 response.set_cookie(
@@ -212,8 +213,9 @@ async def login_handler(
                     secure=True,
                     samesite="none",
                     path="/",
-                    max_age=30 * 24 * 3600,
-                    domain=".endofday.store",  # 명시적인 도메인 설정
+                    max_age=30 * 24 * 3600,  # 30일
+                    expires=30 * 24 * 3600,  # expires 추가
+                    domain="endofday.store",
                 )
 
                 return JWTResponse(
