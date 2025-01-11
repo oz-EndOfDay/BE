@@ -35,6 +35,7 @@ class User(Base):
 
     diaries = relationship("Diary", back_populates="user", cascade="all, delete-orphan")  # type: ignore
     ex_diaries = relationship("ExDiary", back_populates="user")  # type: ignore
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")  # type: ignore
 
     def __init__(
         self,

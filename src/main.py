@@ -15,13 +15,14 @@ from src.config.database.orm import Base
 from src.diary.api.router import router as diary_router
 from src.ex_diary.api.router import router as ex_diary_router
 from src.friend.api.router import router as friend_router
+from src.notification.api.router import router as notification_router
 
 # 라우터 import
 from src.user.api.router import router as user_router
 from src.user.models import Base
 from src.user.service.tasks import periodic_cleanup
 from src.websocket.api.router import router as websocket_router
-
+from src.notification.service.websocket import router as w_router
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +47,9 @@ app.include_router(user_router)
 app.include_router(friend_router)
 app.include_router(diary_router)
 app.include_router(ex_diary_router)
+app.include_router(notification_router)
 app.include_router(websocket_router)
+app.include_router(w_router)
 add_pagination(app)
 
 # CORS 설정
