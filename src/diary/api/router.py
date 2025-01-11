@@ -1,7 +1,8 @@
+import logging
 import os
 import uuid
 from datetime import date, datetime
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import boto3
 from botocore.exceptions import ClientError
@@ -22,14 +23,19 @@ from src.config import Settings
 from src.diary.models import Diary, MoodEnum, WeatherEnum
 from src.diary.repository import DiaryRepository
 from src.diary.schema.response import (
+    DiaryAnalysisResponse,
     DiaryBriefResponse,
     DiaryDetailResponse,
     DiaryListResponse,
+    MoodStatisticsResponse,
 )
+from src.diary.service.AIAnalysis import analyze_diary_entry
 from src.user.service.authentication import authenticate
 
 router = APIRouter(prefix="/diary", tags=["Diary"])
 settings = Settings()
+
+logger = logging.getLogger(__name__)
 
 
 @router.post(
@@ -184,6 +190,34 @@ async def diary_list_deleted(
 
 
 @router.get(
+    path="/mood-stats",
+    summary="사용자의 기분 통계 조회",
+    response_model=MoodStatisticsResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_mood_statistics(
+    user_id: int = Depends(authenticate),
+    diary_repo: DiaryRepository = Depends(),
+) -> MoodStatisticsResponse:
+    """
+    사용자가 작성한 일기들에서 기분별 개수를 반환합니다.
+    """
+    try:
+        # 사용자의 모든 일기를 가져오기
+        user_diaries = await diary_repo.get_all_by_user(user_id)
+
+        # 기분별 개수 집계
+        mood_stats = {mood: 0 for mood in MoodEnum}
+        for diary in user_diaries:
+            mood_stats[diary.mood] += 1
+
+        return MoodStatisticsResponse.build(mood_stats=mood_stats)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"통계 계산 중 오류 발생: {str(e)}")
+
+
+@router.get(
     path="/{diary_id}",
     summary="선택한 일기(1개) 조회",
     status_code=status.HTTP_200_OK,
@@ -253,3 +287,44 @@ async def restore_diary(
         )
 
     return DiaryDetailResponse.model_validate(restored_diary)  # type: ignore
+
+
+@router.post(
+    path="/{diary_id}/analysis",
+    summary="일기 감정 분석 및 조언 생성",
+    status_code=status.HTTP_200_OK,
+    response_model=DiaryAnalysisResponse,
+)
+async def analyze_diary(
+    diary_id: int = Path(...),
+    user_id: int = Depends(authenticate),
+    diary_repo: DiaryRepository = Depends(),
+) -> DiaryAnalysisResponse:
+    diary = await diary_repo.get_diary_detail(diary_id=diary_id)
+
+    if not diary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="일기를 찾을 수 없습니다."
+        )
+
+    if diary.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="본인의 일기만 분석할 수 있습니다.",
+        )
+
+    try:
+        # diary.content가 None일 가능성을 대비해 처리
+        diary_content = diary.content or ""
+        analysis_result = analyze_diary_entry(diary_content)
+
+        return DiaryAnalysisResponse(
+            diary_id=diary_id,
+            diary_content=diary_content,
+            analysis_result=analysis_result,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="일시적인 서비스 오류입니다.",
+        )

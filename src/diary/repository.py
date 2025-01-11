@@ -114,3 +114,12 @@ class DiaryRepository:
             await diary.restore(self.session)
             return diary
         return None
+
+    async def get_all_by_user(self, user_id: int) -> Sequence[Diary]:
+        """
+        특정 사용자가 작성한 모든 일기를 반환합니다.
+        """
+        result = await self.session.execute(
+            select(Diary).where(Diary.user_id == user_id, Diary.deleted_at.is_(None))
+        )
+        return result.scalars().all()

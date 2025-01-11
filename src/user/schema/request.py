@@ -3,6 +3,11 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
 class CreateRequestBody(BaseModel):
     name: str = Field(..., max_length=35)
     nickname: str = Field(..., max_length=35)
