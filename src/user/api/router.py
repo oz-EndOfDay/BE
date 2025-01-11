@@ -199,10 +199,10 @@ async def login_handler(
                     value=access_token,
                     httponly=True,
                     secure=True,
-                    samesite="none",  # 크로스 도메인 환경에서는 "none" 권장
+                    samesite="none",
                     path="/",
                     max_age=3600,
-                    domain=None,  # 모든 서브도메인에서 접근 가능
+                    domain=".endofday.store",  # 명시적인 도메인 설정
                 )
 
                 response.set_cookie(
@@ -213,6 +213,7 @@ async def login_handler(
                     samesite="none",
                     path="/",
                     max_age=30 * 24 * 3600,
+                    domain=".endofday.store",  # 명시적인 도메인 설정
                 )
 
                 return JWTResponse(
