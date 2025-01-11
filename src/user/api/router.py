@@ -17,7 +17,7 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import RedirectResponse
@@ -27,7 +27,7 @@ from src.config import Settings
 from src.config.database.connection import get_async_session
 from src.user.models import User
 from src.user.repository import UserNotFoundException, UserRepository
-from src.user.schema.request import CreateRequestBody, LoginRequest, UpdateRequestBody
+from src.user.schema.request import CreateRequestBody, LoginRequest
 from src.user.schema.response import (
     JWTResponse,
     SocialUser,
@@ -193,19 +193,29 @@ async def login_handler(
             ):
                 refresh_token = encode_refresh_token(user.id)
                 access_token = encode_access_token(user_id=user.id)
+
+                # 액세스 토큰 쿠키 설정
                 response.set_cookie(
                     key="access_token",
                     value=access_token,
+                    httponly=True,  # JavaScript 접근 방지
+                    secure=True,  # HTTPS only
+                    samesite="lax",  # CSRF 보호
+                    path="/",  # 전체 도메인 접근
+                    max_age=3600,  # 1시간 유효
+                )
+
+                # 리프레시 토큰 쿠키 설정
+                response.set_cookie(
+                    key="refresh_token",
+                    value=refresh_token,
                     httponly=True,
                     secure=True,
-                    samesite=None,
-                    max_age=3600,
-                    domain="43.200.255.244",
+                    samesite="lax",
+                    path="/",
+                    max_age=30 * 24 * 3600,  # 30일 유효
                 )
-                response.set_cookie(
-                    key="refresh_token", value=refresh_token, httponly=True
-                )
-                print(response)
+
                 return JWTResponse(
                     access_token=access_token,
                     refresh_token=refresh_token,
