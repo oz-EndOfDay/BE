@@ -163,26 +163,30 @@ def authenticate(
         if not refresh_token:
             raise HTTPException(status_code=401, detail="로그인 필요")
 
-        # 리프레시 토큰으로 새 액세스 토큰 발급
+        # 리프레시 토큰 유효성 추가 검증
+        if is_refresh_token_expired(refresh_token):
+            raise HTTPException(status_code=401, detail="다시 로그인")
+
         try:
             payload = decode_refresh_token(refresh_token)
             new_access_token = encode_access_token(payload["user_id"])
 
-            # 새 쿠키 자동 설정
+            # 쿠키 설정 개선
             response.set_cookie(
                 key="access_token",
                 value=new_access_token,
                 httponly=True,
                 secure=True,
-                samesite="none",  # 'lax'에서 'none'으로 변경
-                path="/",  # 경로 추가
-                max_age=3600,  # 만료 시간 추가
+                samesite="none",
+                path="/",
+                max_age=3600,
+                domain=None,  # 필요에 따라 도메인 설정
             )
 
             return payload["user_id"]
 
         except JWTError:
-            raise HTTPException(status_code=401, detail="다시 로그인")
+            raise HTTPException(status_code=401, detail="인증 실패")
 
     try:
         payload = decode_access_token(access_token)
