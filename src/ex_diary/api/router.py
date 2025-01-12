@@ -197,12 +197,20 @@ async def ex_diary_detail(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def ex_diary_delete(
-    user_id: int = Depends(authenticate),
-    friend_id: int = Path(..., description="친구 관계 id(친구의 유저 id (X))"),
-    ex_diary_id: int = Path(..., description="삭제할 교환일기 id"),
-    ex_diary_repo: ExDiaryRepository = Depends(),
+        user_id: int = Depends(authenticate),
+        friend_id: int = Path(..., description="친구 관계 id(친구의 유저 id (X))"),
+        ex_diary_id: int = Path(..., description="삭제할 교환일기 id"),
+        ex_diary_repo: ExDiaryRepository = Depends(),
+        friend_repo: FriendRepository = Depends(),  # Add friend repository dependency
 ) -> None:
     await ex_diary_repo.delete_ex_diary(
         user_id=user_id, friend_id=friend_id, ex_diary_id=ex_diary_id
     )
-    # return 204, {"message": "ExDiary entry successfully deleted.", "status": "success"}
+
+    # Update Friend table to decrement ex_diary_cnt
+    await friend_repo.update(
+        friend_id=friend_id,
+        data={
+            "ex_diary_cnt": Friend.ex_diary_cnt - 1,
+        },
+    )
