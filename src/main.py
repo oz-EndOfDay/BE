@@ -3,15 +3,13 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import BackgroundTasks, FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.utils import get_openapi
 from fastapi_pagination import add_pagination
 
 # 데이터베이스 관련 모듈
 from src.config.database.connection import async_engine
 from src.config.database.connection_async import async_engine
-from src.config.database.orm import Base
 from src.diary.api.router import router as diary_router
 from src.ex_diary.api.router import router as ex_diary_router
 from src.friend.api.router import router as friend_router
@@ -78,6 +76,23 @@ add_pagination(app)
 async def root() -> dict[str, str]:
     print("main.py -> root")
     return {"message": "Hello World"}
+
+
+logging.basicConfig(
+    level=logging.ERROR,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("/home/ubuntu/error.log"), logging.StreamHandler()],
+)
+
+
+@app.get("/error")
+def create_error() -> dict[str, str]:
+    try:
+        # 의도적인 오류 발생
+        1 / 0
+    except Exception as e:
+        logger.error(f"An error occurred: {e}", exc_info=True)
+    return {"message": "Error test"}
 
 
 # 로컬 실행을 위한 uvicorn 설정
