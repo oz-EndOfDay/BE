@@ -3,6 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+from celery import Celery
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
@@ -21,6 +22,10 @@ from src.user.models import Base
 from src.websocket.api.router import router as websocket_router
 
 logger = logging.getLogger(__name__)
+
+# Celery 앱 초기화
+celery_app = Celery("tasks")
+celery_app.config_from_object("src.config.celery_config")  # Celery 설정 로드
 
 
 @asynccontextmanager
