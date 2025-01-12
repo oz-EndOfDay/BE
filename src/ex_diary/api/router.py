@@ -201,13 +201,45 @@ async def ex_diary_delete(
         friend_id: int = Path(..., description="친구 관계 id(친구의 유저 id (X))"),
         ex_diary_id: int = Path(..., description="삭제할 교환일기 id"),
         ex_diary_repo: ExDiaryRepository = Depends(),
-        friend_repo: FriendRepository = Depends(),  # Add friend repository dependency
+        friend_repo: FriendRepository = Depends(),
 ) -> None:
-    await ex_diary_repo.delete_ex_diary(
-        user_id=user_id, friend_id=friend_id, ex_diary_id=ex_diary_id
+    # S3 클라이언트 설정
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION,
     )
 
-    # Update Friend table to decrement ex_diary_cnt
+    # 삭제할 일기 정보 조회
+    ex_diary = await ex_diary_repo.get_ex_diary_detail(
+        friend_id=friend_id,
+        ex_diary_id=ex_diary_id
+    )
+
+    # S3에 이미지가 있다면 삭제
+    if ex_diary.img_url:
+        try:
+            # S3 키 추출 (URL에서 버킷명과 키 분리)
+            s3_key = ex_diary.img_url.split(f"{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/")[1]
+
+            # S3에서 이미지 삭제
+            s3_client.delete_object(
+                Bucket=settings.S3_BUCKET_NAME,
+                Key=s3_key
+            )
+        except Exception as e:
+            # S3 삭제 실패해도 로깅하고 진행
+            print(f"S3 이미지 삭제 실패: {str(e)}")
+
+    # 일기 삭제
+    await ex_diary_repo.delete_ex_diary(
+        user_id=user_id,
+        friend_id=friend_id,
+        ex_diary_id=ex_diary_id
+    )
+
+    # Friend 테이블 업데이트
     await friend_repo.update(
         friend_id=friend_id,
         data={
