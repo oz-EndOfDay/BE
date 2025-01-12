@@ -29,12 +29,14 @@ from src.user.models import User
 from src.user.repository import UserNotFoundException, UserRepository
 from src.user.schema.request import CreateRequestBody, LoginRequest, UserEmailRequest
 from src.user.schema.response import (
+    BasicResponse,
     JWTResponse,
+    KakaoCallbackResponse,
     SocialUser,
     UserInfo,
     UserMeDetailResponse,
     UserMeResponse,
-    UserSearchResponse, BasicResponse, KakaoCallbackResponse,
+    UserSearchResponse,
 )
 from src.user.service.authentication import (
     ALGORITHM,
@@ -92,7 +94,6 @@ async def create_user(
     )
 
 
-
 @router.get(
     "",
     summary="로그인한 유저 상세 정보 가져오기",
@@ -122,7 +123,11 @@ async def get_users(
 
 
 # 패스워드 분실
-@router.post("/forgot_password", summary="패스워드 분실 시 임시 비밀번호 발급", response_model=BasicResponse)
+@router.post(
+    "/forgot_password",
+    summary="패스워드 분실 시 임시 비밀번호 발급",
+    response_model=BasicResponse,
+)
 async def forgot_password(
     email: str, session: AsyncSession = Depends(get_async_session)
 ) -> BasicResponse:
@@ -243,7 +248,12 @@ async def login_handler(
 
 
 # 로그아웃 엔드포인트
-@router.post("/logout", summary="로그아웃", status_code=status.HTTP_200_OK, response_model=BasicResponse)
+@router.post(
+    "/logout",
+    summary="로그아웃",
+    status_code=status.HTTP_200_OK,
+    response_model=BasicResponse,
+)
 async def logout_handler(request: Request, response: Response) -> BasicResponse:
     try:
         access_token = request.cookies.get("access_token")
@@ -269,10 +279,7 @@ async def logout_handler(request: Request, response: Response) -> BasicResponse:
         # 클라이언트의 쿠키 삭제
         response.delete_cookie(key="access_token")
         response.delete_cookie(key="refresh_token")
-        return BasicResponse(
-            message="로그아웃 되었습니다.",
-            status="success"
-        )
+        return BasicResponse(message="로그아웃 되었습니다.", status="success")
 
     except JWTError:
         raise HTTPException(
@@ -460,7 +467,10 @@ async def update_user(
 
 # soft delete 방식으로 삭제 일자를 db에 입력 후 7일 지난 데이터는 안보이도록 함.
 @router.delete(
-    path="/delete", summary="회원 탈퇴(Soft Delete)", status_code=status.HTTP_200_OK, response_model=None
+    path="/delete",
+    summary="회원 탈퇴(Soft Delete)",
+    status_code=status.HTTP_200_OK,
+    response_model=None,
 )
 async def delete_user(
     user_id: int = Depends(authenticate),
@@ -481,7 +491,10 @@ async def delete_user(
 
 
 @router.post(
-    path="/recovery", summary="계정 복구 가능 여부", status_code=status.HTTP_200_OK, response_model=BasicResponse
+    path="/recovery",
+    summary="계정 복구 가능 여부",
+    status_code=status.HTTP_200_OK,
+    response_model=BasicResponse,
 )
 async def recovery_possible(
     request: Request,
@@ -510,16 +523,15 @@ async def recovery_possible(
         body=f"Please recovery your account by clicking the following link:{recovery_link}",
     )
     return BasicResponse(
-        message = "입력한 이메일로 계정 복구 메일을 전송하였습니다.",
-        status = "success"
+        message="입력한 이메일로 계정 복구 메일을 전송하였습니다.", status="success"
     )
 
 
-
-
-
 @router.get(
-    path="/recovery/{token}", summary="계정 복구", status_code=status.HTTP_200_OK, response_model=BasicResponse
+    path="/recovery/{token}",
+    summary="계정 복구",
+    status_code=status.HTTP_200_OK,
+    response_model=BasicResponse,
 )
 async def recovery_account(
     token: str,
@@ -539,8 +551,7 @@ async def recovery_account(
             raise HTTPException(status_code=404, detail="User not found")
         await user_repo.recovery_account(email)  # 이메일로 사용자 조회
 
-        return BasicResponse(message="계정이 복구되었습니다.", status = "success")
-
+        return BasicResponse(message="계정이 복구되었습니다.", status="success")
 
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=400, detail="Token has expired")
@@ -553,8 +564,7 @@ async def recovery_account(
     "/search", summary="닉네임이나 이메일로 유저 검색", status_code=status.HTTP_200_OK
 )
 async def search_users(
-    word: str = Form(...),
-    session: AsyncSession = Depends(get_async_session)
+    word: str = Form(...), session: AsyncSession = Depends(get_async_session)
 ) -> list[UserSearchResponse]:
     user_repo = UserRepository(session)
 

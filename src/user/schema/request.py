@@ -28,6 +28,6 @@ class UpdateRequestBody(BaseModel):
         None,
     )
 
+
 class UserEmailRequest(BaseModel):
     email: str = Field(..., max_length=50)
-

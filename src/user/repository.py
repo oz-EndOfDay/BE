@@ -25,22 +25,28 @@ class UserRepository:
     # 회원 가입 유저 생성
     async def create_user(self, user: User) -> User:
 
-
         # 이메일 중복 확인
-        existing_email = await self.session.execute(select(User).filter(User.email == user.email))
+        existing_email = await self.session.execute(
+            select(User).filter(User.email == user.email)
+        )
         if existing_email.scalars().first():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Email already registered")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Email already registered"
+            )
 
         # 닉네임 중복 확인
-        existing_nickname = await self.session.execute(select(User).filter(User.nickname == user.nickname))
+        existing_nickname = await self.session.execute(
+            select(User).filter(User.nickname == user.nickname)
+        )
         if existing_nickname.scalars().first():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nickname already taken")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Nickname already taken"
+            )
 
         self.session.add(user)
         await self.session.commit()
         await self.session.refresh(user)
         return user
-
 
     async def create_user_from_social(self, social_user: SocialUser) -> int:
         print("social user 생성")
