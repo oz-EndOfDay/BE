@@ -69,21 +69,26 @@ async def root() -> dict[str, str]:
     return {"message": "Hello World"}
 
 
+# 루트 로거 설정
 # logging.basicConfig(
-#     level=logging.ERROR,
+#     level=logging.INFO,  # INFO 이상의 모든 로그 기록
 #     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-#     handlers=[logging.FileHandler("/home/ubuntu/log/error.log"), logging.StreamHandler()],
+#     handlers=[
+#         logging.FileHandler("/home/ubuntu/log/error.log"),  # ERROR 로그 파일
+#         logging.FileHandler("/home/ubuntu/log/info.log"),  # INFO 로그 파일
+#         logging.StreamHandler(),
+#     ],
 # )
-#
-#
-# @app.get("/error")
-# def create_error() -> dict[str, str]:
-#     try:
-#         # 의도적인 오류 발생
-#         1 / 0
-#     except Exception as e:
-#         logger.error(f"An error occurred: {e}", exc_info=True)
-#     return {"message": "Error test"}
+
+
+@app.get("/error")
+def create_error() -> dict[str, str]:
+    try:
+        # 의도적인 오류 발생
+        1 / 0
+    except Exception as e:
+        logger.error(f"An error occurred: {e}", exc_info=True)
+    return {"message": "Error test"}
 
 
 if __name__ == "__main__":
