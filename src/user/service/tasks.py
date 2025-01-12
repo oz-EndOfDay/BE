@@ -1,37 +1,61 @@
-import asyncio
 import logging
 from datetime import datetime, timedelta
 
-from fastapi import BackgroundTasks
+import boto3
+from botocore.exceptions import ClientError
+from celery import shared_task
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
-from src.config.database.connection import get_async_session
+from src.config import Settings
+from src.config.database.connection import AsyncSessionFactory
 from src.user.models import User
 
+settings = Settings()
+logger = logging.getLogger(__name__)
 
-async def cleanup_deleted_users(session: AsyncSession) -> None:
+
+async def delete_expired_users_task() -> None:
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION,
+    )
+
+    async with AsyncSessionFactory() as session:
+        async with session.begin():
+            await delete_expired_users(session, s3_client)
+
+
+@shared_task(name="tasks.delete_expired_users")  # type: ignore
+async def delete_expired_users(session: AsyncSession, s3_client: boto3.client) -> None:
     threshold_date = datetime.now() - timedelta(days=7)
-    # 오래된 소프트 삭제된 사용자 찾기
-    result = await session.execute(select(User).where(User.deleted_at < threshold_date))
-    # 결과에서 사용자 객체 가져오기
-    users_to_delete = result.scalars().all()
 
-    # 각 사용자 객체 삭제
-    for user in users_to_delete:
-        await session.delete(user)
-    await session.commit()
+    # 삭제 예정 사용자 먼저 조회
+    expired_users = await session.execute(
+        select(User).where(
+            User.deleted_at.isnot(None), User.deleted_at <= threshold_date
+        )
+    )
 
-
-async def periodic_cleanup() -> None:
-    while True:
-        session_gen = get_async_session()
-        try:
-            session = await anext(session_gen)
-            await cleanup_deleted_users(session)
-        finally:
+    # S3에서 프로필 이미지 대량 삭제
+    for user in expired_users.scalars():
+        if user.img_url:
             try:
-                await session_gen.aclose()
-            except StopAsyncIteration:
-                pass
-        await asyncio.sleep(3600)  # 1시간마다 7일 지난 유저 삭제
+                # URL에서 S3 키 추출
+                s3_key = user.img_url.split(
+                    f"{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/"
+                )[1]
+
+                s3_client.delete_object(Bucket=settings.S3_BUCKET_NAME, Key=s3_key)
+            except (ClientError, IndexError) as e:
+                logger.error(f"S3 프로필 이미지 삭제 실패: {user.id}, {str(e)}")
+
+    # 데이터베이스에서 대량 삭제
+    await session.execute(
+        delete(User).where(
+            User.deleted_at.isnot(None), User.deleted_at <= threshold_date
+        )
+    )
+    await session.commit()
