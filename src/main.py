@@ -78,21 +78,21 @@ async def root() -> dict[str, str]:
     return {"message": "Hello World"}
 
 
-logging.basicConfig(
-    level=logging.ERROR,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("/home/ubuntu/error.log"), logging.StreamHandler()],
-)
-
-
-@app.get("/error")
-def create_error() -> dict[str, str]:
-    try:
-        # 의도적인 오류 발생
-        1 / 0
-    except Exception as e:
-        logger.error(f"An error occurred: {e}", exc_info=True)
-    return {"message": "Error test"}
+# logging.basicConfig(
+#     level=logging.ERROR,
+#     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+#     handlers=[logging.FileHandler("/home/ubuntu/log/error.log"), logging.StreamHandler()],
+# )
+#
+#
+# @app.get("/error")
+# def create_error() -> dict[str, str]:
+#     try:
+#         # 의도적인 오류 발생
+#         1 / 0
+#     except Exception as e:
+#         logger.error(f"An error occurred: {e}", exc_info=True)
+#     return {"message": "Error test"}
 
 
 # 로컬 실행을 위한 uvicorn 설정

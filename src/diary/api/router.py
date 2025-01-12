@@ -31,6 +31,7 @@ from src.diary.schema.response import (
 )
 from src.diary.service.AIAnalysis import analyze_diary_entry
 from src.user.service.authentication import authenticate
+from src.user.schema.response import BasicResponse
 
 router = APIRouter(prefix="/diary", tags=["Diary"])
 settings = Settings()
@@ -41,7 +42,7 @@ logger = logging.getLogger(__name__)
 @router.post(
     path="",
     summary="일기 작성",
-    response_model=None,
+    response_model=BasicResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def write_diary(
@@ -53,7 +54,7 @@ async def write_diary(
     content: str = Form(...),
     image: Union[UploadFile, str] = File(default=None),
     diary_repo: DiaryRepository = Depends(),
-) -> tuple[int, dict[str, str]]:
+) -> BasicResponse:
     # S3 클라이언트 설정
     s3_client = boto3.client(
         "s3",
@@ -82,10 +83,11 @@ async def write_diary(
 
             if file_size == 0:
                 print("Warning: Empty file received")
-                return 201, {
-                    "message": "이미지 파일이 비어있습니다.",
-                    "status": "warning",
-                }
+                return BasicResponse(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    message="이미지 파일이 비어있습니다.",
+                    status="warning"
+                )
 
             # 고유한 파일명 생성
             image_filename = f"diary_{user_id}_{uuid.uuid4()}{os.path.splitext(image.filename)[1]}"  # type: ignore
@@ -127,10 +129,10 @@ async def write_diary(
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    return 201, {
-        "message": "일기가 성공적으로 생성되었습니다.",
-        "status": "success",
-    }
+    return BasicResponse(
+        message="일기가 성공적으로 생성되었습니다.",
+        status="success",
+    )
 
 
 @router.get(
@@ -248,13 +250,12 @@ async def diary_detail(
     path="/{diary_id}",
     summary="선택한 일기 삭제",
     status_code=status.HTTP_204_NO_CONTENT,
-    response_model=None,
 )
 async def delete_diary(
     diary_id: int,
     user_id: int = Depends(authenticate),
     diary_repo: DiaryRepository = Depends(),
-) -> tuple[int, dict[str, str]]:
+) -> None:
 
     if not (diary := await diary_repo.get_diary_detail(diary_id=diary_id)):
         raise HTTPException(
@@ -269,7 +270,7 @@ async def delete_diary(
         )
 
     await diary_repo.delete(diary)
-    return 204, {"message": "Diary entry successfully deleted.", "status": "success"}
+    # return BasicResponse(message="Diary entry successfully deleted.", status="success")
 
 
 @router.patch("/{diary_id}/restore", response_model=DiaryDetailResponse)

@@ -24,6 +24,7 @@ from src.ex_diary.schema.response import ExDiaryListResponse, ExDiaryResponse
 from src.friend.models import Friend
 from src.friend.repository import FriendRepository
 from src.user.service.authentication import authenticate
+from src.user.schema.response import BasicResponse
 
 router = APIRouter(prefix="/ex_diary", tags=["Exchange Diary"])
 settings = Settings()
@@ -33,7 +34,7 @@ settings = Settings()
 @router.post(
     path="/{friend_id}",
     summary="교환일기 작성",
-    response_model=None,
+    response_model=BasicResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def write_ex_diary(
@@ -47,7 +48,7 @@ async def write_ex_diary(
     image: Union[UploadFile, str] = File(default=None),
     ex_diary_repo: ExDiaryRepository = Depends(),  # 수정된 부분
     friend_repo: FriendRepository = Depends(),  # 수정된 부분
-) -> tuple[int, dict[str, str]]:
+) -> BasicResponse:
     # S3 클라이언트 설정
     s3_client = boto3.client(
         "s3",
@@ -75,10 +76,10 @@ async def write_ex_diary(
 
             if file_size == 0:
                 print("Warning: Empty file received")
-                return 201, {
-                    "message": "이미지 파일이 비어있습니다.",
-                    "status": "warning",
-                }
+                return BasicResponse(
+                    message="이미지 파일이 비어있습니다.",
+                    status="warning"
+                )
 
             # 고유한 파일명 생성
             image_filename = f"ex_diary_{user_id}_{uuid.uuid4()}{os.path.splitext(image.filename)[1]}"  # type: ignore
@@ -130,10 +131,10 @@ async def write_ex_diary(
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    return 201, {
-        "message": "일기가 성공적으로 생성되었습니다.",
-        "status": "success",
-    }
+    return BasicResponse(
+        message="일기가 성공적으로 생성되었습니다.",
+        status="success"
+    )
 
 
 @router.get(
