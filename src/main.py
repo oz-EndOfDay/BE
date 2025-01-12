@@ -49,8 +49,8 @@ origins = [
     "http://localhost:3000",
     "https://localhost:3000",
     "https://endofday.store",
+    "https://api.endofday.store",
     "https://www.endofday.store",
-    "https://fe-three-omega.vercel.app",
 ]
 
 app.add_middleware(
