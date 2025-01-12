@@ -30,8 +30,8 @@ from src.diary.schema.response import (
     MoodStatisticsResponse,
 )
 from src.diary.service.AIAnalysis import analyze_diary_entry
-from src.user.service.authentication import authenticate
 from src.user.schema.response import BasicResponse
+from src.user.service.authentication import authenticate
 
 router = APIRouter(prefix="/diary", tags=["Diary"])
 settings = Settings()
@@ -84,9 +84,8 @@ async def write_diary(
             if file_size == 0:
                 print("Warning: Empty file received")
                 return BasicResponse(
-                    status_code=status.HTTP_404_NOT_FOUND,
                     message="이미지 파일이 비어있습니다.",
-                    status="warning"
+                    status="warning",
                 )
 
             # 고유한 파일명 생성

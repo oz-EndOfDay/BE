@@ -14,6 +14,7 @@ from src.user.models import User
 settings = Settings()
 logger = logging.getLogger(__name__)
 
+
 async def delete_expired_users_task() -> None:
     s3_client = boto3.client(
         "s3",
@@ -26,10 +27,9 @@ async def delete_expired_users_task() -> None:
         async with session.begin():
             await delete_expired_users(session, s3_client)
 
+
 @shared_task(name="tasks.delete_expired_users")  # type: ignore
-async def delete_expired_users(
-    session: AsyncSession, s3_client: boto3.client
-) -> None:
+async def delete_expired_users(session: AsyncSession, s3_client: boto3.client) -> None:
     threshold_date = datetime.now() - timedelta(days=7)
 
     # 삭제 예정 사용자 먼저 조회
