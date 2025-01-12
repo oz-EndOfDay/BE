@@ -176,12 +176,12 @@ def authenticate(
                 key="access_token",
                 value=new_access_token,
                 httponly=True,
-                secure=True,
+                secure=False,
                 samesite="none",
                 path="/",
                 max_age=3600,
-                # expires=datetime.now(timezone.utc) + timedelta(days=30),  # expires 추가
-                domain=None,
+                expires=datetime.now(timezone.utc) + timedelta(days=30),  # expires 추가
+                # domain=None,
             )
 
             return payload["user_id"]

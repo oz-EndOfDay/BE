@@ -200,7 +200,7 @@ async def login_handler(
                     key="access_token",
                     value=access_token,
                     httponly=True,
-                    secure=True,  # HTTPS 사용하므로 True 유지
+                    secure=False,  # HTTPS 사용하므로 True 유지
                     samesite="none",  # 크로스 도메인이므로 none으로 설정
                     path="/",
                     max_age=3600,  # 1시간
@@ -213,7 +213,7 @@ async def login_handler(
                     key="refresh_token",
                     value=refresh_token,
                     httponly=True,
-                    secure=True,
+                    secure=False,
                     samesite="none",
                     path="/",
                     max_age=30 * 24 * 3600,  # 30일
