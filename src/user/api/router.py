@@ -27,9 +27,11 @@ from src.config import Settings
 from src.config.database.connection import get_async_session
 from src.user.models import User
 from src.user.repository import UserNotFoundException, UserRepository
-from src.user.schema.request import CreateRequestBody, LoginRequest
+from src.user.schema.request import CreateRequestBody, LoginRequest, UserEmailRequest
 from src.user.schema.response import (
+    BasicResponse,
     JWTResponse,
+    KakaoCallbackResponse,
     SocialUser,
     UserInfo,
     UserMeDetailResponse,
@@ -44,8 +46,6 @@ from src.user.service.authentication import (
     encode_access_token,
     encode_refresh_token,
     hash_password,
-    is_refresh_token_expired,
-    refresh_access_token,
     verify_password,
 )
 from src.user.service.smtp import send_email
@@ -123,10 +123,14 @@ async def get_users(
 
 
 # 패스워드 분실
-@router.post("/forgot_password", summary="패스워드 분실 시 임시 비밀번호 발급")
+@router.post(
+    "/forgot_password",
+    summary="패스워드 분실 시 임시 비밀번호 발급",
+    response_model=BasicResponse,
+)
 async def forgot_password(
     email: str, session: AsyncSession = Depends(get_async_session)
-) -> Dict[str, str]:
+) -> BasicResponse:
 
     user_repo = UserRepository(session)
     temp_password = await user_repo.forgot_password(email)
@@ -137,7 +141,10 @@ async def forgot_password(
         body=f"Your temporary password is {temp_password}. Please change your password after logging in with your temporary password.",
     )
 
-    return {"Message": "Temporary password has been sent your mail."}
+    return BasicResponse(
+        message="Your temporary password has been changed successfully.",
+        status="success",
+    )
 
 
 # 회원가입 이메일 인증
@@ -204,7 +211,7 @@ async def login_handler(
                     max_age=3600,  # 1시간
                     expires=datetime.now(timezone.utc)
                     + timedelta(hours=1),  # expires 추가
-                    domain="endofday.store",
+                    # domain="endofday.store",
                 )
 
                 response.set_cookie(
@@ -217,7 +224,7 @@ async def login_handler(
                     max_age=30 * 24 * 3600,  # 30일
                     expires=datetime.now(timezone.utc)
                     + timedelta(days=30),  # expires 추가
-                    domain="endofday.store",
+                    # domain="endofday.store",
                 )
 
                 return JWTResponse(
@@ -241,8 +248,13 @@ async def login_handler(
 
 
 # 로그아웃 엔드포인트
-@router.post("/logout", summary="로그아웃", status_code=status.HTTP_200_OK)
-async def logout_handler(request: Request, response: Response) -> Dict[str, str]:
+@router.post(
+    "/logout",
+    summary="로그아웃",
+    status_code=status.HTTP_200_OK,
+    response_model=BasicResponse,
+)
+async def logout_handler(request: Request, response: Response) -> BasicResponse:
     try:
         access_token = request.cookies.get("access_token")
         refresh_token = request.cookies.get("refresh_token")
@@ -267,7 +279,7 @@ async def logout_handler(request: Request, response: Response) -> Dict[str, str]
         # 클라이언트의 쿠키 삭제
         response.delete_cookie(key="access_token")
         response.delete_cookie(key="refresh_token")
-        return {"detail": "Successfully logged out"}
+        return BasicResponse(message="로그아웃 되었습니다.", status="success")
 
     except JWTError:
         raise HTTPException(
@@ -288,7 +300,7 @@ def kakao_social_login_handler() -> Response:
     )
 
 
-@router.get("/kakao/callback")
+@router.get("/kakao/callback", response_model=KakaoCallbackResponse)
 async def callback(
     code: str,
     session: AsyncSession = Depends(get_async_session),
@@ -455,7 +467,10 @@ async def update_user(
 
 # soft delete 방식으로 삭제 일자를 db에 입력 후 7일 지난 데이터는 안보이도록 함.
 @router.delete(
-    path="/delete", summary="회원 탈퇴(Soft Delete)", status_code=status.HTTP_200_OK
+    path="/delete",
+    summary="회원 탈퇴(Soft Delete)",
+    status_code=status.HTTP_200_OK,
+    response_model=None,
 )
 async def delete_user(
     user_id: int = Depends(authenticate),
@@ -476,15 +491,18 @@ async def delete_user(
 
 
 @router.post(
-    path="/recovery", summary="계정 복구 가능 여부", status_code=status.HTTP_200_OK
+    path="/recovery",
+    summary="계정 복구 가능 여부",
+    status_code=status.HTTP_200_OK,
+    response_model=BasicResponse,
 )
 async def recovery_possible(
     request: Request,
-    user_email: str,
+    user_email: UserEmailRequest,
     session: AsyncSession = Depends(get_async_session),
-) -> dict[str, str]:
+) -> BasicResponse:
     user_repo = UserRepository(session)
-    user = await user_repo.get_user_by_email(user_email)
+    user = await user_repo.get_user_by_email(user_email.email)
 
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -504,24 +522,24 @@ async def recovery_possible(
         subject="Recovery Account",
         body=f"Please recovery your account by clicking the following link:{recovery_link}",
     )
-    return {
-        "message": "입력한 이메일로 계정 복구 메일을 전송하였습니다.",
-        "status": "success",
-    }
+    return BasicResponse(
+        message="입력한 이메일로 계정 복구 메일을 전송하였습니다.", status="success"
+    )
 
 
 @router.get(
-    path="/recovery/{token}", summary="계정 복구", status_code=status.HTTP_200_OK
+    path="/recovery/{token}",
+    summary="계정 복구",
+    status_code=status.HTTP_200_OK,
+    response_model=BasicResponse,
 )
 async def recovery_account(
     token: str,
     session: AsyncSession = Depends(get_async_session),
-) -> dict[str, str]:
-    print("여기까진 도달함.")
+) -> BasicResponse:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("email")
-        print(f"사용자의 이메일은 {email}")
 
         if email is None:
             raise HTTPException(status_code=400, detail="Invalid token")
@@ -533,10 +551,7 @@ async def recovery_account(
             raise HTTPException(status_code=404, detail="User not found")
         await user_repo.recovery_account(email)  # 이메일로 사용자 조회
 
-        return {
-            "message": "계정이 복구되었습니다.",
-            "status": "success",
-        }
+        return BasicResponse(message="계정이 복구되었습니다.", status="success")
 
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=400, detail="Token has expired")
@@ -549,26 +564,29 @@ async def recovery_account(
     "/search", summary="닉네임이나 이메일로 유저 검색", status_code=status.HTTP_200_OK
 )
 async def search_users(
-    word: str, session: AsyncSession = Depends(get_async_session)
+    word: str = Form(...), session: AsyncSession = Depends(get_async_session)
 ) -> list[UserSearchResponse]:
     user_repo = UserRepository(session)
-    users = await user_repo.search_user(word)
 
-    return [
-        UserSearchResponse(id=user.id, nickname=user.nickname, email=user.email)
-        for user in users
-    ]
+    try:
+        users = await user_repo.search_user(word)
+        return [
+            UserSearchResponse(id=user.id, nickname=user.nickname, email=user.email)
+            for user in users
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.post("/refresh-token", summary="리프레쉬토큰으로 액세스토큰 재발급")
-async def refresh_access_token_endpoint(
-    refresh_token: HTTPAuthorizationCredentials,
-) -> dict[str, str]:
-    is_expired = is_refresh_token_expired(refresh_token=refresh_token.credentials)
-    if is_expired:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="리프레쉬 토큰이 만료되었습니다.",
-        )
-    new_access_token = refresh_access_token(refresh_token.credentials)
-    return {"access_token": new_access_token}
+# @router.post("/refresh-token", summary="리프레쉬토큰으로 액세스토큰 재발급")
+# async def refresh_access_token_endpoint(
+#     refresh_token: HTTPAuthorizationCredentials,
+# ) -> dict[str, str]:
+#     is_expired = is_refresh_token_expired(refresh_token=refresh_token.credentials)
+#     if is_expired:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="리프레쉬 토큰이 만료되었습니다.",
+#         )
+#     new_access_token = refresh_access_token(refresh_token.credentials)
+#     return {"access_token": new_access_token}

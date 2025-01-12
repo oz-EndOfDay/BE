@@ -1,7 +1,7 @@
 import random
 import string
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, TypedDict, cast
 
 import jwt
@@ -180,7 +180,8 @@ def authenticate(
                 samesite="none",
                 path="/",
                 max_age=3600,
-                domain=None,  # 필요에 따라 도메인 설정
+                # expires=datetime.now(timezone.utc) + timedelta(days=30),  # expires 추가
+                domain=None,
             )
 
             return payload["user_id"]
