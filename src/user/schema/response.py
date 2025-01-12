@@ -50,16 +50,19 @@ class UserInfo(BaseModel):
     email: EmailStr
     connected_at: str
 
+
 class BasicResponse(BaseModel):
     message: str
     status: str
     model_config = ConfigDict(from_attributes=True)
+
 
 class KakaoUserInfo(BaseModel):
     id: int
     nickname: str
     email: str
     connected_at: datetime
+
 
 class KakaoCallbackResponse(BaseModel):
     user_info: UserInfo
