@@ -30,6 +30,8 @@ async def delete_expired_users_task() -> None:
 
 @shared_task(name="tasks.delete_expired_users")  # type: ignore
 async def delete_expired_users(session: AsyncSession, s3_client: boto3.client) -> None:
+    logger.info("Deleting expired users started...")
+
     threshold_date = datetime.now() - timedelta(days=7)
 
     # 삭제 예정 사용자 먼저 조회
@@ -51,6 +53,7 @@ async def delete_expired_users(session: AsyncSession, s3_client: boto3.client) -
                 s3_client.delete_object(Bucket=settings.S3_BUCKET_NAME, Key=s3_key)
             except (ClientError, IndexError) as e:
                 logger.error(f"S3 프로필 이미지 삭제 실패: {user.id}, {str(e)}")
+    logger.info(f"Deleted S3 image for user {user.id}")
 
     # 데이터베이스에서 대량 삭제
     await session.execute(
@@ -59,3 +62,4 @@ async def delete_expired_users(session: AsyncSession, s3_client: boto3.client) -
         )
     )
     await session.commit()
+    logger.info("Expired users deletion completed.")
