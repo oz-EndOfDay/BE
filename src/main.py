@@ -8,6 +8,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
 
+from src.config import Settings
+
 # 데이터베이스 관련 모듈
 from src.config.database.connection import async_engine
 from src.diary.api.router import router as diary_router
@@ -23,9 +25,16 @@ from src.websocket.api.router import router as websocket_router
 
 logger = logging.getLogger(__name__)
 
+settings = Settings()
+
+REDIS_HOST = settings.REDIS_HOST
+REDIS_PORT = settings.REDIS_PORT
+
 # Celery 앱 초기화
 celery_app = Celery(
-    "tasks", broker="redis://localhost:60000/0", backend="redis://localhost:60000/0"
+    "tasks",
+    broker="redis://{REDIS_HOST}:{REDIS_PORT}}/0",
+    backend="redis://{REDIS_HOST}:{REDIS_PORT}}/0",
 )
 celery_app.config_from_object("src.config.celery_config")  # Celery 설정 로드
 

@@ -161,7 +161,9 @@ def is_access_token_expired(
 ) -> bool:
     try:
         # 토큰 디코딩
-        payload = jwt.decode(access_token.encode('utf-8'), SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            access_token.encode("utf-8"), SECRET_KEY, algorithms=[ALGORITHM]
+        )
 
         # 만료 시간 확인 (exp 필드 존재 여부 확인)
         if "exp" not in payload:
@@ -186,28 +188,38 @@ def authenticate(
     request: Request,
     response: Response,
 ) -> int:
-    # access_token = request.cookies.get("access_token")
-    refresh_token = request.cookies.get("refresh_token")
+    # 1. Authorization 헤더에서 토큰 확인
     authorization_header = request.headers.get("Authorization")
-    print(authorization_header)
+
+    # 2. 헤더에 토큰이 없다면 쿠키에서 access_token 확인
+    access_token = None
     if not authorization_header:
-        raise HTTPException(status_code=401, detail="Authorization header is missing")
+        access_token = request.cookies.get("access_token")
 
-    # Bearer 토큰 처리
-    if not authorization_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid Authorization header format")
-
-    # Authorization 헤더에서 access_token 추출
-    access_token = authorization_header.split(" ", 1)[1]
-    print(access_token)
-    if access_token is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="토큰값 받아올 수 없음.")
-    # 액세스 토큰이 만료되었을때
-    if is_access_token_expired(access_token):
-        # 리프레시 토큰도 만료되었다면.
-        if is_refresh_token_expired(refresh_token):
+        # 쿠키에도 토큰이 없는 경우
+        if not access_token:
             raise HTTPException(
-                status_code=402,
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="No authentication token found",
+            )
+    else:
+        # Bearer 토큰 처리
+        if not authorization_header.startswith("Bearer "):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Authorization header format",
+            )
+
+        # Authorization 헤더에서 access_token 추출
+        access_token = authorization_header.split(" ", 1)[1]
+    # 이하 기존 로직 동일
+    if is_access_token_expired(access_token):
+        refresh_token = request.cookies.get("refresh_token")
+
+        # 리프레시 토큰이 없거나 만료되었다면
+        if not refresh_token or is_refresh_token_expired(refresh_token):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="다시 로그인 해주세요.",
             )
 
@@ -224,22 +236,24 @@ def authenticate(
                 samesite="none",
                 path="/",
                 max_age=3600,
-                expires=datetime.now(timezone.utc)
-                        + timedelta(hours=1),  # expires 추가
-                # domain="api.endofday.store",
+                expires=datetime.now(timezone.utc) + timedelta(hours=1),
             )
 
             return payload["user_id"]
 
         except JWTError:
-            raise HTTPException(status_code=403, detail="인증 실패")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="인증 실패"
+            )
 
     try:
         payload = decode_access_token(access_token)
         return payload["user_id"]
 
     except JWTError:
-        raise HTTPException(status_code=404, detail="유효하지 않은 토큰")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 토큰"
+        )
 
 
 def create_verification_token(email: str) -> str:
