@@ -211,7 +211,7 @@ async def login_handler(
                     max_age=3600,  # 1시간
                     expires=datetime.now(timezone.utc)
                     + timedelta(hours=1),  # expires 추가
-                    domain="api.endofday.store",
+                    # domain="api.endofday.store",
                 )
 
                 response.set_cookie(
@@ -224,7 +224,7 @@ async def login_handler(
                     max_age=30 * 24 * 3600,  # 30일
                     expires=datetime.now(timezone.utc)
                     + timedelta(days=30),  # expires 추가
-                    domain="api.endofday.store",
+                    # domain="api.endofday.store",
                 )
 
                 return JWTResponse(
