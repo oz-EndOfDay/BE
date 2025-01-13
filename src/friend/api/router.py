@@ -69,11 +69,12 @@ async def send_friend_request_by_id(
         )
 
         noti_repo = NotificationRepository(session)
-        await noti_repo.create_notification(notification)
+        noti_info = await noti_repo.create_notification(notification)
 
         await manager.send_personal_message(
             message="새로운 알림이 있습니다.",
-            user_id=target_user.id
+            user_id=target_user.id,
+            noti_id=noti_info.id
         )
 
         await friend_repo.create_friend_request(current_user_id, target_user.id)
