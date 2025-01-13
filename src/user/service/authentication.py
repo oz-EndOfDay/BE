@@ -156,8 +156,10 @@ def authenticate(
     request: Request,
     response: Response,
 ) -> int:
-    access_token = request.cookies.get("access_token")
-    refresh_token = request.cookies.get("refresh_token")
+    # access_token = request.cookies.get("access_token")
+    # refresh_token = request.cookies.get("refresh_token")
+    access_token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    refresh_token = request.headers.get("Refresh-Token", "")
 
     if not access_token:
         if not refresh_token:
