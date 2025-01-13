@@ -176,7 +176,7 @@ def authenticate(
                 key="access_token",
                 value=new_access_token,
                 httponly=True,
-                secure=False, # 개발 환경. https 안붙은 상태
+                secure=True,
                 samesite="none",
                 path="/",
                 max_age=3600,
