@@ -186,9 +186,20 @@ def authenticate(
     request: Request,
     response: Response,
 ) -> int:
-    access_token = request.cookies.get("access_token")
+    # access_token = request.cookies.get("access_token")
     refresh_token = request.cookies.get("refresh_token")
-    print(access_token, refresh_token)
+    authorization_header = request.headers.get("Authorization")
+    print(authorization_header)
+    if not authorization_header:
+        raise HTTPException(status_code=401, detail="Authorization header is missing")
+
+    # Bearer 토큰 처리
+    if not authorization_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid Authorization header format")
+
+    # Authorization 헤더에서 access_token 추출
+    access_token = authorization_header.split(" ", 1)[1]
+    print(access_token)
     if access_token is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="토큰값 받아올 수 없음.")
     # 액세스 토큰이 만료되었을때
