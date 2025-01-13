@@ -209,7 +209,7 @@ def authenticate(
                 key="access_token",
                 value=new_access_token,
                 httponly=True,
-                secure=True,
+                # secure=True,
                 samesite="none",
                 path="/",
                 max_age=3600,
