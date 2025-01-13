@@ -36,7 +36,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-@router.websocket("/ws/{user_id}")
+@router.websocket("/nt/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: int) -> None:
 
     # 헤더에서 토큰 검출. -> 프론트에서 웹소켓 연결 요청할 때 액세스 토큰 담을 수 있는 코드
