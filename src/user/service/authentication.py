@@ -152,6 +152,31 @@ def is_refresh_token_expired(
         )
 
 
+def is_access_token_expired(
+    access_token: str = Depends(HTTPBearer()),
+) -> bool:
+    try:
+        # 토큰 디코딩
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        # 만료 시간 확인 (exp 필드 존재 여부 확인)
+        if "exp" not in payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Access token is invalid (missing expiry).",
+            )
+
+        # 현재 시간과 만료 시간 비교
+        current_time = int(time.time())
+        if payload["exp"] < current_time:
+            return True  # 만료됨
+        return False  # 유효함
+
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token."
+        )
+
 def authenticate(
     request: Request,
     response: Response,
@@ -159,20 +184,17 @@ def authenticate(
     access_token = request.cookies.get("access_token")
     refresh_token = request.cookies.get("refresh_token")
 
-    if not access_token:
-
-        # if not refresh_token:
-        #     raise HTTPException(status_code=401, detail="fre다시 로그인 해주세요.")
-
-        # 리프레시 토큰 유효성 추가 검증
-        if is_refresh_token_expired(refresh_token):  # type : ignore
+    # 액세스 토큰이 만료되었을때
+    if is_access_token_expired(access_token):
+        # 리프레시 토큰도 만료되었다면.
+        if is_refresh_token_expired(refresh_token):
             raise HTTPException(
                 status_code=401,
-                detail="프레시 토큰이 만료 되었습니다. 다시 로그인 해주세요.",
+                detail="다시 로그인 해주세요.",
             )
 
         try:
-            payload = decode_refresh_token(refresh_token)  # type : ignore
+            payload = decode_refresh_token(refresh_token)
             new_access_token = encode_access_token(payload["user_id"])
 
             # 쿠키 설정 개선
