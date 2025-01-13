@@ -55,14 +55,15 @@ def encode_access_token(user_id: int) -> str:
 
 
 def encode_refresh_token(user_id: int) -> str:
-    payload: Dict[str, Any] = {
+    payload: JWTPayload = {
         "user_id": user_id,
-        "iat": int(time.time()),
+        "isa": int(time.time()),
         "exp": int(time.time())
         + (REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60),  # 30일 후 만료
-        "type": "refresh",
     }
-    refresh_token: str = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    refresh_token: str = jwt.encode(
+        cast(dict[str, Any], payload), SECRET_KEY, algorithm=ALGORITHM
+    )
     return refresh_token
 
 
@@ -70,6 +71,25 @@ def decode_access_token(access_token: str) -> JWTPayload:
     return cast(
         JWTPayload, jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
     )
+
+
+def decode_refresh_token(refresh_token: str) -> JWTPayload:
+    return cast(
+        JWTPayload, jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+    )
+    # try:
+    #     payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+    #     if payload.get("type") != "refresh":
+    #         raise HTTPException(
+    #             status_code=status.HTTP_401_UNAUTHORIZED,
+    #             detail="Invalid token type",
+    #         )
+    #     return cast(JWTPayload, payload)
+    # except JWTError:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail="Could not validate credentials",
+    #     )
 
 
 # def decode_access_token(access_token: str) -> JWTPayload:
@@ -88,22 +108,6 @@ def decode_access_token(access_token: str) -> JWTPayload:
 #     except jwt.InvalidTokenError:
 #         # 토큰 유효성 검증 실패
 #         raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다")
-
-
-def decode_refresh_token(refresh_token: str) -> JWTPayload:
-    try:
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("type") != "refresh":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token type",
-            )
-        return cast(JWTPayload, payload)
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-        )
 
 
 # 액세스 토큰 재발급
@@ -176,6 +180,7 @@ def is_access_token_expired(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token."
         )
+
 
 def authenticate(
     request: Request,
