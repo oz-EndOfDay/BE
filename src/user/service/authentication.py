@@ -156,23 +156,37 @@ def authenticate(
     request: Request,
     response: Response,
 ) -> int:
-    access_token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    refresh_token = request.headers.get("Refresh-Token", "")
+    access_token = request.cookies.get("access_token")
+    refresh_token = request.cookies.get("refresh_token")
 
     if not access_token:
-        if not refresh_token:
-            raise HTTPException(status_code=401, detail="로그인 필요")
+
+        # if not refresh_token:
+        #     raise HTTPException(status_code=401, detail="fre다시 로그인 해주세요.")
 
         # 리프레시 토큰 유효성 추가 검증
-        if is_refresh_token_expired(refresh_token):
-            raise HTTPException(status_code=401, detail="다시 로그인")
+        if is_refresh_token_expired(refresh_token):  # type : ignore
+            raise HTTPException(
+                status_code=401,
+                detail="프레시 토큰이 만료 되었습니다. 다시 로그인 해주세요.",
+            )
 
         try:
-            payload = decode_refresh_token(refresh_token)
+            payload = decode_refresh_token(refresh_token)  # type : ignore
             new_access_token = encode_access_token(payload["user_id"])
 
-            # 헤더에 새 액세스 토큰 설정
-            response.headers["Authorization"] = f"Bearer {new_access_token}"
+            # 쿠키 설정 개선
+            response.set_cookie(
+                key="access_token",
+                value=new_access_token,
+                httponly=True,
+                secure=True,
+                samesite="none",
+                path="/",
+                max_age=3600,
+                expires=datetime.now(timezone.utc) + timedelta(days=30),  # expires 추가
+                # domain=None,
+            )
 
             return payload["user_id"]
 
@@ -185,7 +199,6 @@ def authenticate(
 
     except JWTError:
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰")
-
 
 
 def create_verification_token(email: str) -> str:
