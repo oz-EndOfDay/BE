@@ -39,14 +39,13 @@ class User(Base):
 
     def __init__(
         self,
-        name: str,
         nickname: str,
         email: str,
         password: str,
         is_active: bool,
         provider: str,
     ):
-        self.name = name
+
         self.nickname = nickname
         self.email = email
         self.password = password
@@ -61,7 +60,6 @@ class User(Base):
     @classmethod
     def create(
         cls: Type[T],
-        name: str,
         nickname: str,
         email: str,
         password: str,
@@ -74,7 +72,6 @@ class User(Base):
         hashed_password = hash_password(password)
         print("회원가입시 생성된 비밀번호:" + hashed_password)
         return cls(
-            name=name,
             nickname=nickname,
             email=email,
             password=hashed_password,

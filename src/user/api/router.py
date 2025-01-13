@@ -67,7 +67,6 @@ async def create_user(
     user_repo = UserRepository(session)  # UserRepository 인스턴스 생성
 
     new_user = User(
-        name=user_data.name,
         nickname=user_data.nickname,
         email=user_data.email,
         password=hash_password(user_data.password),  # 비밀번호 해싱 처리
@@ -89,7 +88,6 @@ async def create_user(
 
     return UserMeResponse(
         id=created_user.id,
-        name=created_user.name,
         nickname=created_user.nickname,
     )
 
@@ -113,7 +111,6 @@ async def get_users(
 
     return UserMeDetailResponse(
         id=user.id,
-        name=user.name,
         nickname=user.nickname,
         email=user.email,
         introduce=user.introduce,
@@ -205,8 +202,8 @@ async def login_handler(
                     key="access_token",
                     value=access_token,
                     httponly=True,
-                    secure=True,  # HTTPS 사용하므로 True 유지
-                    samesite=None,  # 크로스 도메인이므로 none으로 설정
+                    secure=False,  # 개발 환경. https 안붙은 상태
+                    samesite="none",  # 크로스 도메인이므로 none으로 설정
                     path="/",
                     max_age=3600,  # 1시간
                     expires=datetime.now(timezone.utc)
@@ -218,8 +215,8 @@ async def login_handler(
                     key="refresh_token",
                     value=refresh_token,
                     httponly=True,
-                    secure=True,
-                    samesite=None,
+                    secure=False, # 개발 환경. https 안붙은 상태
+                    samesite="none",
                     path="/",
                     max_age=30 * 24 * 3600,  # 30일
                     expires=datetime.now(timezone.utc)
@@ -303,11 +300,12 @@ def kakao_social_login_handler() -> Response:
 @router.get("/kakao/callback", response_model=KakaoCallbackResponse)
 async def callback(
     code: str,
+    response: Response,
     session: AsyncSession = Depends(get_async_session),
 ) -> dict[str, str | UserInfo]:
     token_url = "https://kauth.kakao.com/oauth/token"
     async with httpx.AsyncClient() as client:
-        response = await client.post(
+        k_response = await client.post(
             token_url,
             data={
                 "grant_type": "authorization_code",
@@ -318,12 +316,12 @@ async def callback(
             },
         )
 
-    if response.status_code != 200:
+    if k_response.status_code != 200:
         raise HTTPException(
-            status_code=response.status_code, detail="Failed to get access token"
+            status_code=k_response.status_code, detail="Failed to get access token"
         )
 
-    token_data = response.json()
+    token_data = k_response.json()
     access_token = token_data.get("access_token")
 
     # 사용자 정보 요청
@@ -368,6 +366,18 @@ async def callback(
     access_token = encode_access_token(user_id=user_id)
     refresh_token = encode_refresh_token(user_id=user_id)
 
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,  # HTTPS 사용하므로 True 유지
+        samesite=None,  # 크로스 도메인이므로 none으로 설정
+        path="/",
+        max_age=3600,  # 1시간
+        expires=datetime.now(timezone.utc)
+                + timedelta(hours=1),  # expires 추가
+        # domain="endofday.store",
+    )
     return {
         "user_info": user_data,
         "access_token": access_token,
