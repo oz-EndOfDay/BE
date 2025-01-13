@@ -196,7 +196,7 @@ def authenticate(
         # 리프레시 토큰도 만료되었다면.
         if is_refresh_token_expired(refresh_token):
             raise HTTPException(
-                status_code=401,
+                status_code=402,
                 detail="다시 로그인 해주세요.",
             )
 
@@ -221,14 +221,14 @@ def authenticate(
             return payload["user_id"]
 
         except JWTError:
-            raise HTTPException(status_code=401, detail="인증 실패")
+            raise HTTPException(status_code=403, detail="인증 실패")
 
     try:
         payload = decode_access_token(access_token)
         return payload["user_id"]
 
     except JWTError:
-        raise HTTPException(status_code=401, detail="유효하지 않은 토큰")
+        raise HTTPException(status_code=404, detail="유효하지 않은 토큰")
 
 
 def create_verification_token(email: str) -> str:
