@@ -189,8 +189,8 @@ def authenticate(
     access_token = request.cookies.get("access_token")
     refresh_token = request.cookies.get("refresh_token")
     print(access_token, refresh_token)
-    # if access_token is None:
-    #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="토큰값 받아올 수 없음.")
+    if access_token is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="토큰값 받아올 수 없음.")
     # 액세스 토큰이 만료되었을때
     if is_access_token_expired(access_token):
         # 리프레시 토큰도 만료되었다면.
@@ -213,8 +213,9 @@ def authenticate(
                 samesite="none",
                 path="/",
                 max_age=3600,
-                expires=datetime.now(timezone.utc) + timedelta(days=30),  # expires 추가
-                domain="api.endofday.store",
+                expires=datetime.now(timezone.utc)
+                        + timedelta(hours=1),  # expires 추가
+                # domain="api.endofday.store",
             )
 
             return payload["user_id"]

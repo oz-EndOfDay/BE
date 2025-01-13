@@ -219,7 +219,7 @@ async def login_handler(
                     value=refresh_token,
                     httponly=True,
                     secure=True,
-                    samesite=None,
+                    samesite="none",
                     path="/",
                     max_age=30 * 24 * 3600,  # 30일
                     expires=datetime.now(timezone.utc)
