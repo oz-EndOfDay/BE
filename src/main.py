@@ -24,7 +24,9 @@ from src.websocket.api.router import router as websocket_router
 logger = logging.getLogger(__name__)
 
 # Celery 앱 초기화
-celery_app = Celery("tasks")
+celery_app = Celery('tasks',
+                    broker='redis://localhost:60000/0',
+                    backend='redis://localhost:60000/0')
 celery_app.config_from_object("src.config.celery_config")  # Celery 설정 로드
 
 
