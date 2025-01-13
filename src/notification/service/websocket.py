@@ -1,6 +1,6 @@
 from typing import Dict
 
-from fastapi import WebSocket, WebSocketDisconnect, APIRouter
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from jose import JWTError
 
 from src.user.service.authentication import decode_access_token
@@ -20,15 +20,21 @@ class ConnectionManager:
         if user_id in self.active_connections:
             del self.active_connections[user_id]
 
-    async def send_personal_message(self, message: str, user_id: int, noti_id: int) -> None:
+    async def send_personal_message(
+        self, message: str, user_id: int, noti_id: int
+    ) -> None:
         if user_id in self.active_connections:
-            await self.active_connections[user_id].send_json({"message": message, "noti_id": noti_id})
+            await self.active_connections[user_id].send_json(
+                {"message": message, "noti_id": noti_id}
+            )
 
     async def broadcast(self, message: str) -> None:
         for connection in self.active_connections.values():
             await connection.send_text(message)
 
+
 manager = ConnectionManager()
+
 
 @router.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: int) -> None:

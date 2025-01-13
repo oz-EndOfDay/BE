@@ -187,7 +187,6 @@ def authenticate(
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰")
 
 
-
 def create_verification_token(email: str) -> str:
     payload = {
         "email": email,
