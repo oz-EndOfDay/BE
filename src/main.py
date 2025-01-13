@@ -16,13 +16,14 @@ from src.diary.api.router import router as diary_router
 from src.ex_diary.api.router import router as ex_diary_router
 from src.friend.api.router import router as friend_router
 from src.notification.api.router import router as notification_router
+from src.notification.service.websocket import router as w_router
 
 # 라우터 import
 from src.user.api.router import router as user_router
 from src.user.models import Base
 from src.user.service.tasks import periodic_cleanup
 from src.websocket.api.router import router as websocket_router
-from src.notification.service.websocket import router as w_router
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,6 +44,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 # FastAPI 앱 생성 with lifespan
 app = FastAPI(lifespan=lifespan)
 # 라우터 포함
+
+origins = [
+    "https://fe-three-omega.vercel.app",
+    "http://43.200.225.244",
+    "https://43.200.225.244",
+    "http://localhost:3000",
+    "https://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(user_router)
 app.include_router(friend_router)
 app.include_router(diary_router)
@@ -51,15 +69,6 @@ app.include_router(notification_router)
 app.include_router(websocket_router)
 app.include_router(w_router)
 add_pagination(app)
-
-# CORS 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 모든 오리진 허용 (개발 환경)
-    allow_credentials=True,
-    allow_methods=["*"],  # 모든 HTTP 메서드 허용
-    allow_headers=["*"],  # 모든 헤더 허용
-)
 
 
 # 기본 루트 핸들러

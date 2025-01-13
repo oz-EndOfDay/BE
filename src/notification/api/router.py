@@ -50,5 +50,3 @@ async def mark_as_read(
         return {"status": "success"}
     else:
         return {"status": "failed"}
-
-
