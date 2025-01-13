@@ -188,7 +188,9 @@ def authenticate(
 ) -> int:
     access_token = request.cookies.get("access_token")
     refresh_token = request.cookies.get("refresh_token")
-
+    print(access_token, refresh_token)
+    if access_token is None or refresh_token is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="토큰값 받아올 수 없음.")
     # 액세스 토큰이 만료되었을때
     if is_access_token_expired(access_token):
         # 리프레시 토큰도 만료되었다면.
