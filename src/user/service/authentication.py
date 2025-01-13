@@ -156,8 +156,6 @@ def authenticate(
     request: Request,
     response: Response,
 ) -> int:
-    # access_token = request.cookies.get("access_token")
-    # refresh_token = request.cookies.get("refresh_token")
     access_token = request.headers.get("Authorization", "").replace("Bearer ", "")
     refresh_token = request.headers.get("Refresh-Token", "")
 
@@ -173,18 +171,8 @@ def authenticate(
             payload = decode_refresh_token(refresh_token)
             new_access_token = encode_access_token(payload["user_id"])
 
-            # 쿠키 설정 개선
-            response.set_cookie(
-                key="access_token",
-                value=new_access_token,
-                httponly=True,
-                secure=True,
-                samesite="none",
-                path="/",
-                max_age=3600,
-                # expires=datetime.now(timezone.utc) + timedelta(days=30),  # expires 추가
-                domain=None,
-            )
+            # 헤더에 새 액세스 토큰 설정
+            response.headers["Authorization"] = f"Bearer {new_access_token}"
 
             return payload["user_id"]
 
@@ -197,6 +185,7 @@ def authenticate(
 
     except JWTError:
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰")
+
 
 
 def create_verification_token(email: str) -> str:
