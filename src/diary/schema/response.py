@@ -45,8 +45,9 @@ class DiaryDetailResponse(BaseModel):
 
 class DiaryAnalysisResponse(BaseModel):
     diary_id: int
-    diary_content: str
-    analysis_result: str
+    # diary_content: str    # 반환 시 일기 내용은 반ㅏ하ㄱ지 않음
+    diary_analysis_result: str
+    advice_analysis_result: str
 
 
 class MoodStatisticsResponse(BaseModel):
