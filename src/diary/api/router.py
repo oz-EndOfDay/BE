@@ -320,7 +320,7 @@ async def analyze_diary(
 
         return DiaryAnalysisResponse(
             diary_id=diary_id,
-            diary_content=diary_content,
+            # diary_content=diary_content,      # 반환 시 일기 내용은 반환하지 않음
             analysis_result=analysis_result,
         )
     except Exception:

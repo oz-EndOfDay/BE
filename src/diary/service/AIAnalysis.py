@@ -9,7 +9,17 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+'''
+analysis_result 이거는 조언으로 충분한 수면: 규칙적인 수면 습관으로 몸과 마음을 회복하세요.
+짧은 낮잠: 피로할 땐 15~30분 낮잠으로 에너지를 충전하세요.
+스트레스 관리: 유머와 장난스러운 순간으로 스트레스를 해소하세요.
+리프레시 활동: 산책이나 스트레칭으로 기분 전환과 에너지를 높이세요. 3-4가지정도만 130자 내외로 하면될거같아요 예시 데이터 주면되지않을까요 ㅠ 또 하나는 감정분석도 100자내외정도 ?
 
+감정분석 100자 내외 조언 130자내외 (3-4가지정도만)
+
+데이터는 괜찬은듯 ?
+(실용적 조언마다 간단한 핵심 키워드 : 실용적인 조언 의 형태로 반환해 주세요.)
+'''
 def analyze_diary_entry(content: str) -> str:
     stream = client.chat.completions.create(
         model="gpt-4o-mini",
