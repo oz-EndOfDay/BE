@@ -10,14 +10,19 @@ class Message(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    friend_id = Column(Integer, ForeignKey("friends.id"))  # 채팅방 식별자로 사용
+    friend_id = Column(Integer, ForeignKey("friends.id"))
     message = Column(Text)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
 
     @classmethod
-    def create(cls, user_id: int, friend_id: int, content: str) -> "Message":
+    def create(
+        cls,
+        user_id: int,
+        friend_id: int,
+        content: str,
+    ) -> "Message":
         return cls(
             user_id=user_id,
-            friend_id=friend_id,  # friend_id를 채팅방 식별자로 사용
+            friend_id=friend_id,
             message=content,
         )

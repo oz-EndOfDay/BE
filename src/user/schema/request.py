@@ -3,6 +3,11 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
 class CreateRequestBody(BaseModel):
     name: str = Field(..., max_length=35)
     nickname: str = Field(..., max_length=35)
@@ -22,3 +27,7 @@ class UpdateRequestBody(BaseModel):
     img_url: Optional[str] = Field(
         None,
     )
+
+
+class UserEmailRequest(BaseModel):
+    email: str = Field(..., max_length=50)

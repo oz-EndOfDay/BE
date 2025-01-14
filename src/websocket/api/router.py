@@ -98,7 +98,7 @@ async def websocket_endpoint(
         # 이전 메시지들을 클라이언트에게 전송
         for msg in previous_messages:
             if msg.user_id == user_id:
-                await websocket.send_text(f"me : {msg.message}")
+                await websocket.send_text(f"Me : {msg.message}")
             else:
                 await websocket.send_text(f"{friend_name} : {msg.message}")
 
@@ -114,11 +114,12 @@ async def websocket_endpoint(
                 session.add(new_message)
                 await session.commit()
 
-            await websocket.send_text(f"You: {content}")
+            # 발신자에게 메시지 표시
+            await websocket.send_text(f"Me : {content}")
+
+            # 수신자에게 메시지 전송
             await manager.send_personal_message(
-                f"User {user_id}: {content}",
-                user_id,
-                friend_id
+                f"{friend_name} : {content}", user_id, friend_id
             )
     except WebSocketDisconnect:
         manager.disconnect(user_id, friend_id)

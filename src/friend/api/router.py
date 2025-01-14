@@ -18,6 +18,9 @@ from src.friend.schema.response import (
     FriendResponse,
     FriendsListResponse,
 )
+from src.notification.models import Notification
+from src.notification.repository import NotificationRepository
+from src.notification.service.websocket import manager
 from src.user.repository import UserRepository
 from src.user.service.authentication import authenticate
 
@@ -29,14 +32,14 @@ router = APIRouter(prefix="/friends", tags=["Friend"])
     summary="친구 신청 (검색된 친구에서 친구 id 값을 담아 요청)",
     response_model=FriendRequestByEmailResponse,
 )
-async def send_friend_request_by_email(
+async def send_friend_request_by_id(
     user_id: int,
     current_user_id: int = Depends(authenticate),  # 현재 인증된 사용자의 ID
     session: AsyncSession = Depends(get_async_session),
 ) -> FriendRequestByEmailResponse:
     user_repo = UserRepository(session)
     friend_repo = FriendRepository(session)
-
+    current_user = await user_repo.get_user_by_id(current_user_id)
     target_user = await user_repo.get_user_by_id(user_id)
     if not target_user:
         raise HTTPException(
@@ -55,6 +58,22 @@ async def send_friend_request_by_email(
 
     # 친구 신청 생성
     try:
+        if not current_user:
+            raise HTTPException(
+                status_code=400, detail="보내는 사용자 정보가 없습니다."
+            )
+        message = f"{current_user.nickname} 님이 친구요청을 보내셨습니다."
+        notification = Notification(
+            user_id=target_user.id, title="친구 요청", message=message
+        )
+
+        noti_repo = NotificationRepository(session)
+        await noti_repo.create_notification(notification)
+
+        await manager.send_personal_message(
+            message="새로운 알림이 있습니다.", user_id=target_user.id
+        )
+
         await friend_repo.create_friend_request(current_user_id, target_user.id)
         return FriendRequestByEmailResponse(success=True, message="친구 신청 완료.")
     except Exception as e:

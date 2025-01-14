@@ -23,6 +23,7 @@ from src.ex_diary.repository import ExDiaryRepository
 from src.ex_diary.schema.response import ExDiaryListResponse, ExDiaryResponse
 from src.friend.models import Friend
 from src.friend.repository import FriendRepository
+from src.user.schema.response import BasicResponse
 from src.user.service.authentication import authenticate
 
 router = APIRouter(prefix="/ex_diary", tags=["Exchange Diary"])
@@ -33,7 +34,7 @@ settings = Settings()
 @router.post(
     path="/{friend_id}",
     summary="교환일기 작성",
-    response_model=None,
+    response_model=BasicResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def write_ex_diary(
@@ -47,7 +48,7 @@ async def write_ex_diary(
     image: Union[UploadFile, str] = File(default=None),
     ex_diary_repo: ExDiaryRepository = Depends(),  # 수정된 부분
     friend_repo: FriendRepository = Depends(),  # 수정된 부분
-) -> tuple[int, dict[str, str]]:
+) -> BasicResponse:
     # S3 클라이언트 설정
     s3_client = boto3.client(
         "s3",
@@ -75,10 +76,9 @@ async def write_ex_diary(
 
             if file_size == 0:
                 print("Warning: Empty file received")
-                return 201, {
-                    "message": "이미지 파일이 비어있습니다.",
-                    "status": "warning",
-                }
+                return BasicResponse(
+                    message="이미지 파일이 비어있습니다.", status="warning"
+                )
 
             # 고유한 파일명 생성
             image_filename = f"ex_diary_{user_id}_{uuid.uuid4()}{os.path.splitext(image.filename)[1]}"  # type: ignore
@@ -130,10 +130,7 @@ async def write_ex_diary(
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    return 201, {
-        "message": "일기가 성공적으로 생성되었습니다.",
-        "status": "success",
-    }
+    return BasicResponse(message="일기가 성공적으로 생성되었습니다.", status="success")
 
 
 @router.get(
@@ -200,8 +197,44 @@ async def ex_diary_delete(
     friend_id: int = Path(..., description="친구 관계 id(친구의 유저 id (X))"),
     ex_diary_id: int = Path(..., description="삭제할 교환일기 id"),
     ex_diary_repo: ExDiaryRepository = Depends(),
+    friend_repo: FriendRepository = Depends(),
 ) -> None:
+    # S3 클라이언트 설정
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION,
+    )
+
+    # 삭제할 일기 정보 조회
+    ex_diary = await ex_diary_repo.get_ex_diary_detail(
+        friend_id=friend_id, ex_diary_id=ex_diary_id
+    )
+
+    # S3에 이미지가 있다면 삭제
+    if ex_diary.img_url:  # type: ignore
+        try:
+            # S3 키 추출 (URL에서 버킷명과 키 분리)
+            s3_key = ex_diary.img_url.split(  # type: ignore
+                f"{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/"
+            )[1]
+
+            # S3에서 이미지 삭제
+            s3_client.delete_object(Bucket=settings.S3_BUCKET_NAME, Key=s3_key)
+        except Exception as e:
+            # S3 삭제 실패해도 로깅하고 진행
+            print(f"S3 이미지 삭제 실패: {str(e)}")
+
+    # 일기 삭제
     await ex_diary_repo.delete_ex_diary(
         user_id=user_id, friend_id=friend_id, ex_diary_id=ex_diary_id
     )
-    # return 204, {"message": "ExDiary entry successfully deleted.", "status": "success"}
+
+    # Friend 테이블 업데이트
+    await friend_repo.update(
+        friend_id=friend_id,
+        data={
+            "ex_diary_cnt": Friend.ex_diary_cnt - 1,
+        },
+    )
