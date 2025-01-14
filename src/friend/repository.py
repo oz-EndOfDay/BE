@@ -74,10 +74,7 @@ class FriendRepository:
     async def get_friends(self, user_id: int) -> list[Friend]:
         result = await self.session.execute(
             select(Friend)
-            .options(
-                selectinload(Friend.user1),
-                selectinload(Friend.user2)
-            )
+            .options(selectinload(Friend.user1), selectinload(Friend.user2))
             .filter(
                 ((Friend.user_id1 == user_id) | (Friend.user_id2 == user_id))
                 & (Friend.is_accept == True)

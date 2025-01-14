@@ -47,17 +47,18 @@ class FriendListResponse(BaseModel):  # 친구 요청 목록을 보기 위한 �
     class Config:
         from_attributes = True
 
+
 class FriendsResponse(BaseModel):
-    id: int
-    is_accept: bool
+    id: int | None
+    is_accept: bool | None
     ex_diary_cnt: Optional[int]  # 예시로 친구 일기의 개수를 추가
     last_ex_date: Optional[datetime]  # 마지막 교류 날짜
-    created_at: datetime
-    user1_nickname: Optional[str]  # user1의 닉네임
-    user2_nickname: Optional[str]  # user2의 닉네임
+    created_at: datetime | None
+    friend_nickname: str  # user1의 닉네임
 
     class Config:
         from_attributes = True  # ORM 모델에서 Pydantic 모델로 변환을 쉽게 해줍니다.
+
 
 # 친구 목록 전체를 감싸는 모델
 class FriendsListResponse(BaseModel):
