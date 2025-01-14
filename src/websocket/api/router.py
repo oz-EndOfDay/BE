@@ -13,6 +13,7 @@ from src.websocket.schemas import MessageCreate
 
 router = APIRouter()
 
+
 # WebSocket 연결과 메시지 관리를 위한 클래스
 class ConnectionManager:
     def __init__(self) -> None:
@@ -81,7 +82,7 @@ async def websocket_endpoint(
         # 친구의 닉네임 조회
         friend_name = ""
         if friend_record:
-            if friend_record.user_id1 != user_id:
+            if friend_record.user_id1 == user_id:
                 user_query = select(User).where(User.id == friend_record.user_id1)
                 user_result = await db.execute(user_query)
                 user = user_result.scalar_one_or_none()
