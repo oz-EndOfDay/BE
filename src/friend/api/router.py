@@ -180,6 +180,7 @@ async def list_friends(
             last_ex_date=friend.last_ex_date,
             created_at=friend.created_at,
             friend_nickname=friend.user2.nickname if friend.user_id1 == current_user_id else friend.user1.nickname,  # type: ignore
+            friend_profile_img=friend.user2.img_url if friend.user_id1 == current_user_id else friend.user1.img_url,  # type: ignore
         )
         for friend in friends
     ]
