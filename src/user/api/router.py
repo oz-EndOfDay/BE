@@ -300,12 +300,12 @@ def kakao_social_login_handler() -> Response:
     )
 
 
-@router.get("/kakao/callback", response_model=KakaoCallbackResponse)
+@router.get("/kakao/callback", response_model=JWTResponse)
 async def callback(
     code: str,
     response: Response,
     session: AsyncSession = Depends(get_async_session),
-) -> None:
+) -> JWTResponse:
     token_url = "https://kauth.kakao.com/oauth/token"
     async with httpx.AsyncClient() as client:
         k_response = await client.post(
@@ -377,6 +377,11 @@ async def callback(
             # domain="api.endofday.store",
         )
 
+        return JWTResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
+
     elif existing_user and existing_user.provider == "":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -417,6 +422,10 @@ async def callback(
             max_age=30 * 24 * 3600,  # 30일
             expires=datetime.now(timezone.utc) + timedelta(days=30),  # expires 추가
             # domain="api.endofday.store",
+        )
+        return JWTResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
         )
 
 

@@ -49,7 +49,6 @@ class UserRepository:
         return user
 
     async def create_user_from_social(self, social_user: SocialUser) -> int:
-        print("social user 생성")
         new_user = User(
             nickname=social_user.nickname,
             email=social_user.email,
