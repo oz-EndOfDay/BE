@@ -41,15 +41,30 @@ class FriendResponse(BaseModel):
         from_attributes = True  # from_orm 대신 사용
 
 
-class FriendList(BaseModel):  # 친구 요청 목록을 보기 위한 모델
+class FriendListResponse(BaseModel):  # 친구 요청 목록을 보기 위한 모델
     friends: List[FriendResponse]
 
+    class Config:
+        from_attributes = True
 
-class FriendsListResponse(BaseModel):  # 친구 목록을 보기 위한 모델
-    friends: list[FriendResponse]
+class FriendsResponse(BaseModel):
+    id: int
+    is_accept: bool
+    ex_diary_cnt: Optional[int]  # 예시로 친구 일기의 개수를 추가
+    last_ex_date: Optional[datetime]  # 마지막 교류 날짜
+    created_at: datetime
+    user1_nickname: Optional[str]  # user1의 닉네임
+    user2_nickname: Optional[str]  # user2의 닉네임
 
+    class Config:
+        from_attributes = True  # ORM 모델에서 Pydantic 모델로 변환을 쉽게 해줍니다.
 
-from pydantic import BaseModel
+# 친구 목록 전체를 감싸는 모델
+class FriendsListResponse(BaseModel):
+    friends: List[FriendsResponse]  # 친구 목록은 FriendsResponse 객체들로 이루어짐
+
+    class Config:
+        from_attributes = True  # ORM 모델에서 Pydantic 모델로 변환을 쉽게 해줍니다.
 
 
 class DeleteFriendResponse(BaseModel):

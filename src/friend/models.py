@@ -1,6 +1,8 @@
 from datetime import datetime
+from typing import Any, Optional
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from src.config.database.orm import Base
@@ -29,5 +31,16 @@ class Friend(Base):
     user2 = relationship("User", foreign_keys=[user_id2])  # type: ignore
     ex_diaries = relationship("ExDiary", back_populates="friend", cascade="all, delete-orphan")  # type: ignore
 
+    @hybrid_property
+    def user1_nickname(self) -> Optional[str]:
+        if self.user_id1:
+            return self.user1.nickname  # type: ignore
+        return None
+
+    @hybrid_property
+    def user2_nickname(self) -> Optional[str]:
+        if self.user_id2:
+            return self.user2.nickname  # type: ignore
+        return None
 
 __all__ = ["Friend", "Base"]

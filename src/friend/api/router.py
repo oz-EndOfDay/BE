@@ -16,7 +16,7 @@ from src.friend.schema.response import (
     FriendRequestResponse,
     FriendRequestsListResponse,
     FriendResponse,
-    FriendsListResponse,
+    FriendsResponse, FriendListResponse, FriendsListResponse,
 )
 from src.notification.models import Notification
 from src.notification.repository import NotificationRepository
@@ -170,7 +170,18 @@ async def list_friends(
     frd_repo = FriendRepository(session)
     friends = await frd_repo.get_friends(current_user_id)
     return FriendsListResponse(
-        friends=[FriendResponse.model_validate(friend) for friend in friends]
+        friends=[
+            FriendsResponse(
+                id=friend.id,
+                is_accept=friend.is_accept,
+                ex_diary_cnt=friend.ex_diary_cnt,
+                last_ex_date=friend.last_ex_date,
+                created_at=friend.created_at,
+                user1_nickname=friend.user1.nickname if friend.user1 else None, # type: ignore
+                user2_nickname=friend.user2.nickname if friend.user2 else None, # type: ignore
+            )
+            for friend in friends
+        ]
     )
 
 

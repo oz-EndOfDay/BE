@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 from fastapi import Depends
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.config.database.connection import get_async_session
 from src.friend.models import Friend
@@ -72,9 +73,14 @@ class FriendRepository:
     # 친구 목록 조회 repo
     async def get_friends(self, user_id: int) -> list[Friend]:
         result = await self.session.execute(
-            select(Friend).filter(
-                (Friend.user_id1 == user_id) & (Friend.is_accept == True)
-                | (Friend.user_id2 == user_id) & (Friend.is_accept == True)
+            select(Friend)
+            .options(
+                selectinload(Friend.user1),
+                selectinload(Friend.user2)
+            )
+            .filter(
+                ((Friend.user_id1 == user_id) | (Friend.user_id2 == user_id))
+                & (Friend.is_accept == True)
             )
         )
         return list(result.scalars().all())
