@@ -171,20 +171,20 @@ async def list_friends(
 ) -> FriendsListResponse:
     frd_repo = FriendRepository(session)
     friends = await frd_repo.get_friends(current_user_id)
-    return FriendsListResponse(
-        friends=[
-            FriendsResponse(
-                id=friend.id,
-                is_accept=friend.is_accept,
-                ex_diary_cnt=friend.ex_diary_cnt,
-                last_ex_date=friend.last_ex_date,
-                created_at=friend.created_at,
-                user1_nickname=friend.user1.nickname if friend.user1 else None,  # type: ignore
-                user2_nickname=friend.user2.nickname if friend.user2 else None,  # type: ignore
-            )
-            for friend in friends
-        ]
-    )
+
+    response_data = [
+        FriendsResponse(
+            id=friend.id,
+            is_accept=friend.is_accept,
+            ex_diary_cnt=friend.ex_diary_cnt,
+            last_ex_date=friend.last_ex_date,
+            created_at=friend.created_at,
+            friend_nickname=friend.user2.nickname if friend.user_id1 == current_user_id else friend.user1.nickname,  # type: ignore
+            friend_profile_img=friend.user2.img_url if friend.user_id1 == current_user_id else friend.user1.img_url,  # type: ignore
+        )
+        for friend in friends
+    ]
+    return FriendsListResponse(friends=response_data)
 
 
 # 친구 거절 시에도 테이블에서 삭제 동작하게 함.
