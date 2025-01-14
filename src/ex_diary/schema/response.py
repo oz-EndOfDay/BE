@@ -2,8 +2,8 @@ from datetime import date, datetime
 
 from pydantic import BaseModel
 
-from src.user.models import User
 from src.ex_diary.models import ExDiary
+from src.user.models import User
 
 
 class ExDiaryBriefResponse(BaseModel):
