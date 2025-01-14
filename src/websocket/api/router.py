@@ -14,15 +14,18 @@ from src.websocket.schemas import MessageCreate
 router = APIRouter()
 
 
+# WebSocket 연결과 메시지 관리를 위한 클래스
 class ConnectionManager:
     def __init__(self) -> None:
         self.active_connections: Dict[Tuple[int, int], WebSocket] = {}
 
     async def connect(self, websocket: WebSocket, user_id: int, friend_id: int) -> None:
+        # 새로운 WebSocket 연결을 수락하고 저장
         await websocket.accept()
         self.active_connections[(user_id, friend_id)] = websocket
 
     def disconnect(self, user_id: int, friend_id: int) -> None:
+        # WebSocket 연결 종료 시 연결 제거
         if (user_id, friend_id) in self.active_connections:
             del self.active_connections[(user_id, friend_id)]
 
@@ -79,7 +82,7 @@ async def websocket_endpoint(
         # 친구의 닉네임 조회
         friend_name = ""
         if friend_record:
-            if friend_record.user_id1 != user_id:
+            if friend_record.user_id1 == user_id:
                 user_query = select(User).where(User.id == friend_record.user_id1)
                 user_result = await db.execute(user_query)
                 user = user_result.scalar_one_or_none()
