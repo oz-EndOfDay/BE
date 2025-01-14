@@ -82,7 +82,7 @@ async def websocket_endpoint(
         # 친구의 닉네임 조회
         friend_name = ""
         if friend_record:
-            if friend_record.user_id1 == user_id:
+            if friend_record.user_id1 != user_id:
                 user_query = select(User).where(User.id == friend_record.user_id1)
                 user_result = await db.execute(user_query)
                 user = user_result.scalar_one_or_none()
@@ -101,6 +101,22 @@ async def websocket_endpoint(
                 await websocket.send_text(f"Me : {msg.message}")
             else:
                 await websocket.send_text(f"{friend_name} : {msg.message}")
+
+        # 친구의 닉네임 조회
+        friend_name = ""
+        if friend_record:
+            if friend_record.user_id1 == user_id:
+                user_query = select(User).where(User.id == friend_record.user_id1)
+                user_result = await db.execute(user_query)
+                user = user_result.scalar_one_or_none()
+                if user:
+                    friend_name = user.nickname
+            else:
+                user_query = select(User).where(User.id == friend_record.user_id2)
+                user_result = await db.execute(user_query)
+                user = user_result.scalar_one_or_none()
+                if user:
+                    friend_name = user.nickname
 
         # 실시간 메시지 수신 및 처리
         while True:
