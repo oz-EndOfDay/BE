@@ -12,11 +12,13 @@ from src.friend.schema.request import (
 )
 from src.friend.schema.response import (
     DeleteFriendResponse,
+    FriendListResponse,
     FriendRequestByEmailResponse,
     FriendRequestResponse,
     FriendRequestsListResponse,
     FriendResponse,
-    FriendsResponse, FriendListResponse, FriendsListResponse,
+    FriendsListResponse,
+    FriendsResponse,
 )
 from src.notification.models import Notification
 from src.notification.repository import NotificationRepository
@@ -177,8 +179,8 @@ async def list_friends(
                 ex_diary_cnt=friend.ex_diary_cnt,
                 last_ex_date=friend.last_ex_date,
                 created_at=friend.created_at,
-                user1_nickname=friend.user1.nickname if friend.user1 else None, # type: ignore
-                user2_nickname=friend.user2.nickname if friend.user2 else None, # type: ignore
+                user1_nickname=friend.user1.nickname if friend.user1 else None,  # type: ignore
+                user2_nickname=friend.user2.nickname if friend.user2 else None,  # type: ignore
             )
             for friend in friends
         ]

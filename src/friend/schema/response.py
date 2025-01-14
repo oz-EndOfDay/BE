@@ -47,6 +47,7 @@ class FriendListResponse(BaseModel):  # 친구 요청 목록을 보기 위한 �
     class Config:
         from_attributes = True
 
+
 class FriendsResponse(BaseModel):
     id: int
     is_accept: bool
@@ -58,6 +59,7 @@ class FriendsResponse(BaseModel):
 
     class Config:
         from_attributes = True  # ORM 모델에서 Pydantic 모델로 변환을 쉽게 해줍니다.
+
 
 # 친구 목록 전체를 감싸는 모델
 class FriendsListResponse(BaseModel):

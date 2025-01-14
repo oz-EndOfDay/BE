@@ -43,4 +43,5 @@ class Friend(Base):
             return self.user2.nickname  # type: ignore
         return None
 
+
 __all__ = ["Friend", "Base"]

@@ -9,7 +9,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-'''
+"""
 analysis_result 이거는 조언으로 충분한 수면: 규칙적인 수면 습관으로 몸과 마음을 회복하세요.
 짧은 낮잠: 피로할 땐 15~30분 낮잠으로 에너지를 충전하세요.
 스트레스 관리: 유머와 장난스러운 순간으로 스트레스를 해소하세요.
@@ -19,7 +19,9 @@ analysis_result 이거는 조언으로 충분한 수면: 규칙적인 수면 습
 
 데이터는 괜찬은듯 ?
 (실용적 조언마다 간단한 핵심 키워드 : 실용적인 조언 의 형태로 반환해 주세요.)
-'''
+"""
+
+
 def analyze_diary_entry(content: str) -> str:
     stream = client.chat.completions.create(
         model="gpt-4o-mini",
