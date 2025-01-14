@@ -1,14 +1,12 @@
 from typing import Dict, Tuple
-
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 from src.config.database.connection_async import get_db
 from src.friend.models import Friend
 from src.user.models import User
-from src.websocket.api.auth import get_current_user
+from src.user.service.authentication import decode_access_token
 from src.websocket.models import Message
 from src.websocket.schemas import MessageCreate
 
@@ -28,9 +26,8 @@ class ConnectionManager:
             del self.active_connections[(user_id, friend_id)]
 
     async def send_personal_message(
-        self, message: str, sender_id: int, friend_id: int
+            self, message: str, sender_id: int, friend_id: int
     ) -> None:
-        # 같은 friend_room_id를 가진 모든 연결에 메시지 전송
         for (user_id, room_id), websocket in self.active_connections.items():
             if room_id == friend_id and user_id != sender_id:
                 await websocket.send_text(message)
@@ -41,14 +38,34 @@ manager = ConnectionManager()
 
 @router.websocket("/ws/{user_id}/{friend_id}")
 async def websocket_endpoint(
-    websocket: WebSocket,
-    user_id: int,
-    friend_id: int,
-    db: AsyncSession = Depends(get_db),
+        websocket: WebSocket,
+        user_id: int,
+        friend_id: int,
+        db: AsyncSession = Depends(get_db),
 ) -> None:
-    await manager.connect(websocket, user_id, friend_id)
     try:
-        # 메시지 기록 조회
+        # 헤더에서 토큰 추출 및 검증
+        authorization = websocket.headers.get("authorization")
+        if not authorization:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
+
+        # Bearer 토큰에서 실제 토큰 추출
+        try:
+            token = authorization.split(" ")[1]
+            payload = decode_access_token(token)
+            token_user_id = payload["user_id"]
+
+            if token_user_id != user_id:
+                await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+                return
+        except Exception:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
+
+        await manager.connect(websocket, user_id, friend_id)
+
+        # 이전 채팅 기록 조회
         messages_query = (
             select(Message)
             .where(Message.friend_id == friend_id)
@@ -57,11 +74,12 @@ async def websocket_endpoint(
         messages_result = await db.execute(messages_query)
         previous_messages = messages_result.scalars().all()
 
-        # 친구 관계 조회
+        # 친구 정보 조회
         friend_query = select(Friend).where(Friend.id == friend_id)
         friend_result = await db.execute(friend_query)
         friend_record = friend_result.scalar_one_or_none()
 
+        # 친구의 닉네임 조회
         friend_name = ""
         if friend_record:
             if friend_record.user_id1 != user_id:
@@ -77,29 +95,30 @@ async def websocket_endpoint(
                 if user:
                     friend_name = user.nickname
 
-        # 이전 메시지 전송
+        # 이전 메시지들을 클라이언트에게 전송
         for msg in previous_messages:
             if msg.user_id == user_id:
                 await websocket.send_text(f"me : {msg.message}")
             else:
                 await websocket.send_text(f"{friend_name} : {msg.message}")
 
-        # 실시간 메시지 처리
+        # 실시간 메시지 수신 및 처리
         while True:
             content = await websocket.receive_text()
             async with db as session:
                 new_message = Message(
-                    user_id=user_id, friend_id=friend_id, message=content
+                    user_id=user_id,
+                    friend_id=friend_id,
+                    message=content
                 )
                 session.add(new_message)
                 await session.commit()
 
-            # 발신자에게 메시지 표시
             await websocket.send_text(f"You: {content}")
-
-            # 수신자에게 메시지 전송
             await manager.send_personal_message(
-                f"User {user_id}: {content}", user_id, friend_id
+                f"User {user_id}: {content}",
+                user_id,
+                friend_id
             )
     except WebSocketDisconnect:
         manager.disconnect(user_id, friend_id)
@@ -107,17 +126,20 @@ async def websocket_endpoint(
 
 @router.post("/send_message/")
 async def send_message(
-    message: MessageCreate,
-    current_user: int = Depends(get_current_user),
-    db: Session = Depends(get_db),
+        message: MessageCreate,
+        db: AsyncSession = Depends(get_db),
 ) -> dict[str, str]:
-    new_message = Message.create(
-        user_id=current_user, friend_id=message.friend_id, content=message.content
+    new_message = Message(
+        user_id=message.user_id,
+        friend_id=message.friend_id,
+        message=message.content
     )
     db.add(new_message)
-    db.commit()
+    await db.commit()
 
     await manager.send_personal_message(
-        f"User {current_user}: {message.content}", current_user, message.friend_id
+        f"User {message.user_id}: {message.content}",
+        message.user_id,
+        message.friend_id
     )
     return {"status": "success", "message": "Message sent"}
