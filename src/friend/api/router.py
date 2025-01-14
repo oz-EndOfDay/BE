@@ -12,12 +12,17 @@ from src.friend.schema.request import (
 )
 from src.friend.schema.response import (
     DeleteFriendResponse,
+    FriendListResponse,
     FriendRequestByEmailResponse,
     FriendRequestResponse,
     FriendRequestsListResponse,
     FriendResponse,
     FriendsListResponse,
+    FriendsResponse,
 )
+from src.notification.models import Notification
+from src.notification.repository import NotificationRepository
+from src.notification.service.websocket import manager
 from src.user.repository import UserRepository
 from src.user.service.authentication import authenticate
 
@@ -29,14 +34,14 @@ router = APIRouter(prefix="/friends", tags=["Friend"])
     summary="친구 신청 (검색된 친구에서 친구 id 값을 담아 요청)",
     response_model=FriendRequestByEmailResponse,
 )
-async def send_friend_request_by_email(
+async def send_friend_request_by_id(
     user_id: int,
     current_user_id: int = Depends(authenticate),  # 현재 인증된 사용자의 ID
     session: AsyncSession = Depends(get_async_session),
 ) -> FriendRequestByEmailResponse:
     user_repo = UserRepository(session)
     friend_repo = FriendRepository(session)
-
+    current_user = await user_repo.get_user_by_id(current_user_id)
     target_user = await user_repo.get_user_by_id(user_id)
     if not target_user:
         raise HTTPException(
@@ -55,6 +60,22 @@ async def send_friend_request_by_email(
 
     # 친구 신청 생성
     try:
+        if not current_user:
+            raise HTTPException(
+                status_code=400, detail="보내는 사용자 정보가 없습니다."
+            )
+        message = f"{current_user.nickname} 님이 친구요청을 보내셨습니다."
+        notification = Notification(
+            user_id=target_user.id, title="친구 요청", message=message
+        )
+
+        noti_repo = NotificationRepository(session)
+        await noti_repo.create_notification(notification)
+
+        await manager.send_personal_message(
+            message="새로운 알림이 있습니다.", user_id=target_user.id
+        )
+
         await friend_repo.create_friend_request(current_user_id, target_user.id)
         return FriendRequestByEmailResponse(success=True, message="친구 신청 완료.")
     except Exception as e:
@@ -150,9 +171,20 @@ async def list_friends(
 ) -> FriendsListResponse:
     frd_repo = FriendRepository(session)
     friends = await frd_repo.get_friends(current_user_id)
-    return FriendsListResponse(
-        friends=[FriendResponse.model_validate(friend) for friend in friends]
-    )
+
+    response_data = [
+        FriendsResponse(
+            id=friend.id,
+            is_accept=friend.is_accept,
+            ex_diary_cnt=friend.ex_diary_cnt,
+            last_ex_date=friend.last_ex_date,
+            created_at=friend.created_at,
+            friend_nickname=friend.user2.nickname if friend.user_id1 == current_user_id else friend.user1.nickname,  # type: ignore
+            friend_profile_img=friend.user2.img_url if friend.user_id1 == current_user_id else friend.user1.img_url,  # type: ignore
+        )
+        for friend in friends
+    ]
+    return FriendsListResponse(friends=response_data)
 
 
 # 친구 거절 시에도 테이블에서 삭제 동작하게 함.

@@ -5,7 +5,6 @@ from pydantic import BaseModel, ConfigDict, EmailStr
 
 class UserMeResponse(BaseModel):  # 내 정보를 반환할 때
     id: int | None = None
-    name: str | None = None
     nickname: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -25,6 +24,7 @@ class UserMeDetailResponse(BaseModel):  # 내 정보를 반환할 때
 
 class JWTResponse(BaseModel):
     access_token: str
+    refresh_token: str
 
 
 class UserSearchResponse(BaseModel):
@@ -48,3 +48,22 @@ class UserInfo(BaseModel):
     nickname: str
     email: EmailStr
     connected_at: str
+
+
+class BasicResponse(BaseModel):
+    message: str
+    status: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class KakaoUserInfo(BaseModel):
+    id: int
+    nickname: str
+    email: str
+    connected_at: datetime
+
+
+class KakaoCallbackResponse(BaseModel):
+    user_info: UserInfo
+    access_token: str
+    refresh_token: str

@@ -1,8 +1,13 @@
 import redis.asyncio as redis
 from fastapi import HTTPException, status
 
+from src.config import Settings
+
+settings = Settings()
 # Redis 클라이언트 설정
-redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+redis_client = redis.Redis(
+    host="localhost", port=settings.REDIS_PORT, db=0, decode_responses=True
+)
 
 
 class TokenBlacklist:
@@ -19,6 +24,7 @@ class TokenBlacklist:
 
 
 async def blacklist_token(token: str, expires_in: int = 3600) -> None:
+    print("블랙리스트에 추가")
     """토큰을 블랙리스트에 추가하는 함수입니다."""
     await TokenBlacklist.add_to_blacklist(token, expires_in)
 
