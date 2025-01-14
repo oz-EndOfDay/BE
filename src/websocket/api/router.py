@@ -1,5 +1,6 @@
 from typing import Dict, Tuple
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status, Depends
+
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,7 +27,7 @@ class ConnectionManager:
             del self.active_connections[(user_id, friend_id)]
 
     async def send_personal_message(
-            self, message: str, sender_id: int, friend_id: int
+        self, message: str, sender_id: int, friend_id: int
     ) -> None:
         for (user_id, room_id), websocket in self.active_connections.items():
             if room_id == friend_id and user_id != sender_id:
@@ -36,16 +37,15 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-@router.websocket("/ws/{user_id}/{friend_id}")
+@router.websocket("/ws/{friend_id}")
 async def websocket_endpoint(
-        websocket: WebSocket,
-        user_id: int,
-        friend_id: int,
-        db: AsyncSession = Depends(get_db),
+    websocket: WebSocket,
+    friend_id: int,
+    db: AsyncSession = Depends(get_db),
 ) -> None:
     try:
         # 헤더에서 토큰 추출 및 검증
-        authorization = websocket.headers.get("authorization")
+        authorization = websocket.headers.get("Authorization")
         if not authorization:
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
@@ -54,11 +54,8 @@ async def websocket_endpoint(
         try:
             token = authorization.split(" ")[1]
             payload = decode_access_token(token)
-            token_user_id = payload["user_id"]
+            user_id = payload["user_id"]
 
-            if token_user_id != user_id:
-                await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-                return
         except Exception:
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
@@ -107,9 +104,7 @@ async def websocket_endpoint(
             content = await websocket.receive_text()
             async with db as session:
                 new_message = Message(
-                    user_id=user_id,
-                    friend_id=friend_id,
-                    message=content
+                    user_id=user_id, friend_id=friend_id, message=content
                 )
                 session.add(new_message)
                 await session.commit()
@@ -127,20 +122,16 @@ async def websocket_endpoint(
 
 @router.post("/send_message/")
 async def send_message(
-        message: MessageCreate,
-        db: AsyncSession = Depends(get_db),
+    message: MessageCreate,
+    db: AsyncSession = Depends(get_db),
 ) -> dict[str, str]:
     new_message = Message(
-        user_id=message.user_id,
-        friend_id=message.friend_id,
-        message=message.content
+        user_id=message.user_id, friend_id=message.friend_id, message=message.content
     )
     db.add(new_message)
     await db.commit()
 
     await manager.send_personal_message(
-        f"User {message.user_id}: {message.content}",
-        message.user_id,
-        message.friend_id
+        f"User {message.user_id}: {message.content}", message.user_id, message.friend_id
     )
     return {"status": "success", "message": "Message sent"}
