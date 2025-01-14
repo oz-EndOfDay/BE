@@ -89,7 +89,6 @@ async def create_user(
 
     return UserMeResponse(
         id=created_user.id,
-        name=created_user.name,
         nickname=created_user.nickname,
     )
 
@@ -384,7 +383,6 @@ async def callback(
 )
 async def update_user(
     user_id: int = Depends(authenticate),  # 인증된 사용자 ID
-    name: str = Form(...),
     nickname: str = Form(...),
     password: str = Form(...),
     introduce: str = Form(...),
@@ -443,7 +441,6 @@ async def update_user(
 
     # 사용자 데이터 업데이트 (img_url 포함)
     user_data_dict = {
-        "name": name,
         "nickname": nickname,
         "password": password,
         "introduce": introduce,
@@ -460,7 +457,6 @@ async def update_user(
 
     return UserMeResponse(
         id=updated_user.id,
-        name=updated_user.name,
         nickname=updated_user.nickname,
     )
 
