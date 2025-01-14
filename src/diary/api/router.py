@@ -317,11 +317,14 @@ async def analyze_diary(
         # diary.content가 None일 가능성을 대비해 처리
         diary_content = diary.content or ""
         analysis_result = analyze_diary_entry(diary_content)
+        diary_analysis_result = analysis_result.split("---")[0]
+        advice_analysis_result = analysis_result.split("---")[1]
 
         return DiaryAnalysisResponse(
             diary_id=diary_id,
             # diary_content=diary_content,      # 반환 시 일기 내용은 반환하지 않음
-            analysis_result=analysis_result,
+            diary_analysis_result=diary_analysis_result,
+            advice_analysis_result=advice_analysis_result,
         )
     except Exception:
         raise HTTPException(
