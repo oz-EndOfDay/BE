@@ -27,3 +27,7 @@ class UpdateRequestBody(BaseModel):
     img_url: Optional[str] = Field(
         None,
     )
+
+
+class UserEmailRequest(BaseModel):
+    email: str = Field(..., max_length=50)

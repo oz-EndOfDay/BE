@@ -34,6 +34,8 @@ async def delete_expired_diaries(
 ) -> None:
     seven_days_ago = datetime.now() - timedelta(days=7)
 
+    logger.info("Deleting expired diaries started...")
+
     # 삭제 예정 일기 먼저 조회
     expired_diaries = await session.execute(
         select(Diary).where(
@@ -53,6 +55,7 @@ async def delete_expired_diaries(
             except ClientError as e:
                 # 로깅 추천
                 logger.error(f"S3 이미지 삭제 실패: {diary.id}, {str(e)}")
+    logger.info(f"Deleted S3 image for user/diary {diary.id}")
 
     # 데이터베이스에서 대량 삭제
     await session.execute(
@@ -61,3 +64,4 @@ async def delete_expired_diaries(
         )
     )
     await session.commit()
+    logger.info("Expired diaries deletion completed.")
