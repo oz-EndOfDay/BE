@@ -24,6 +24,7 @@ from src.ex_diary.schema.response import ExDiaryListResponse, ExDiaryResponse
 from src.friend.models import Friend
 from src.friend.repository import FriendRepository
 from src.user.service.authentication import authenticate
+from src.user.repository import UserRepository
 
 router = APIRouter(prefix="/ex_diary", tags=["Exchange Diary"])
 settings = Settings()
@@ -173,6 +174,7 @@ async def ex_diary_detail(
     friend_id: int = Path(..., description="친구 관계 id(친구의 유저 id (X))"),
     ex_diary_id: int = Path(..., description="상세 조회할 교환일기의 id"),
     ex_diary_repo: ExDiaryRepository = Depends(),
+    user_repo: UserRepository = Depends(),
 ) -> ExDiaryResponse:
     ex_diary = await ex_diary_repo.get_ex_diary_detail(
         friend_id=friend_id, ex_diary_id=ex_diary_id
@@ -186,8 +188,9 @@ async def ex_diary_detail(
                 "status": "fail",
             },
         )
+    user = await user_repo.get_user_by_id(user_id)
 
-    return ExDiaryResponse.build(ex_diary=ex_diary, user_id=user_id)
+    return ExDiaryResponse.build(ex_diary=ex_diary, user=user)
 
 
 @router.delete(
