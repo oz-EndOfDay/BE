@@ -3,6 +3,7 @@ from datetime import date, datetime
 from pydantic import BaseModel
 
 from src.ex_diary.models import ExDiary
+from src.user.models import User
 
 
 class ExDiaryBriefResponse(BaseModel):
@@ -45,17 +46,23 @@ class ExDiaryListResponse(BaseModel):
 class ExDiaryResponse(BaseModel):
     id: int
     title: str
+    author: str
     write_date: date
+    weather: str
+    mood: str
     content: str
     img_url: str
     created_at: datetime
 
     @classmethod
-    def build(cls, ex_diary: ExDiary, user_id: int) -> "ExDiaryResponse":
+    def build(cls, ex_diary: ExDiary, user: User) -> "ExDiaryResponse":
         return cls(
             id=ex_diary.id or 0,
             title=ex_diary.title or "",
+            author=user.nickname or "",
             write_date=ex_diary.write_date or date.today(),
+            weather=ex_diary.weather or "",
+            mood=ex_diary.mood or "",
             content=ex_diary.content or "",
             img_url=ex_diary.img_url or "",
             created_at=ex_diary.created_at or datetime.now(),

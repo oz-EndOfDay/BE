@@ -20,6 +20,7 @@ from fastapi import (
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Mapped
 from starlette.responses import RedirectResponse
 
 from blacklist import blacklist_token
@@ -89,7 +90,6 @@ async def create_user(
 
     return UserMeResponse(
         id=created_user.id,
-        name=created_user.name,
         nickname=created_user.nickname,
     )
 
@@ -300,14 +300,15 @@ def kakao_social_login_handler() -> Response:
     )
 
 
-@router.get("/kakao/callback", response_model=KakaoCallbackResponse)
+@router.get("/kakao/callback", response_model=JWTResponse)
 async def callback(
     code: str,
+    response: Response,
     session: AsyncSession = Depends(get_async_session),
-) -> dict[str, str | UserInfo]:
+) -> JWTResponse:
     token_url = "https://kauth.kakao.com/oauth/token"
     async with httpx.AsyncClient() as client:
-        response = await client.post(
+        k_response = await client.post(
             token_url,
             data={
                 "grant_type": "authorization_code",
@@ -318,12 +319,12 @@ async def callback(
             },
         )
 
-    if response.status_code != 200:
+    if k_response.status_code != 200:
         raise HTTPException(
-            status_code=response.status_code, detail="Failed to get access token"
+            status_code=k_response.status_code, detail="Failed to get access token"
         )
 
-    token_data = response.json()
+    token_data = k_response.json()
     access_token = token_data.get("access_token")
 
     # 사용자 정보 요청
@@ -347,32 +348,85 @@ async def callback(
     user_repo = UserRepository(session)
     existing_user = await user_repo.get_user_by_email(user_email)
 
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    if existing_user and existing_user.provider == "kakao":
+        # 카카오 로그인 사용자일 경우 바로 토큰 발급
 
-    new_user = SocialUser(
-        email=user_email,
-        nickname=f'kakao_{user_info.get("id")}',
-        provider="kakao",
-        is_active=True,
-    )
-    user_id = await user_repo.create_user_from_social(new_user)
+        access_token = encode_access_token(user_id=existing_user.id)
+        refresh_token = encode_refresh_token(user_id=existing_user.id)
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,  # HTTPS 사용하므로 True 유지
+            samesite="none",  # 크로스 도메인이므로 none으로 설정
+            path="/",
+            max_age=3600,  # 1시간
+            expires=datetime.now(timezone.utc) + timedelta(hours=1),  # expires 추가
+            # domain="api.endofday.store",
+        )
 
-    user_data = UserInfo(
-        id=user_info.get("id"),
-        nickname=f"kakao_{user_info.get('id')}",
-        email=user_info.get("kakao_account", {}).get("email"),
-        connected_at=user_info.get("connected_at"),
-    )
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="none",
+            path="/",
+            max_age=30 * 24 * 3600,  # 30일
+            expires=datetime.now(timezone.utc) + timedelta(days=30),  # expires 추가
+            # domain="api.endofday.store",
+        )
 
-    access_token = encode_access_token(user_id=user_id)
-    refresh_token = encode_refresh_token(user_id=user_id)
+        return JWTResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
 
-    return {
-        "user_info": user_data,
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-    }
+    elif existing_user and existing_user.provider == "":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="이미 이메일로 회원가입 하였습니다.",
+        )
+
+    else:
+
+        new_user = SocialUser(
+            email=user_email,
+            nickname=f'kakao_{user_info.get("id")}',
+            provider="kakao",
+            is_active=True,
+        )
+        user_id = await user_repo.create_user_from_social(new_user)
+        access_token = encode_access_token(user_id=user_id)
+        refresh_token = encode_refresh_token(user_id=user_id)
+
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,  # HTTPS 사용하므로 True 유지
+            samesite="none",  # 크로스 도메인이므로 none으로 설정
+            path="/",
+            max_age=3600,  # 1시간
+            expires=datetime.now(timezone.utc) + timedelta(hours=1),  # expires 추가
+            # domain="api.endofday.store",
+        )
+
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="none",
+            path="/",
+            max_age=30 * 24 * 3600,  # 30일
+            expires=datetime.now(timezone.utc) + timedelta(days=30),  # expires 추가
+            # domain="api.endofday.store",
+        )
+        return JWTResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
 
 
 # 사용자 정보 수정
@@ -384,7 +438,6 @@ async def callback(
 )
 async def update_user(
     user_id: int = Depends(authenticate),  # 인증된 사용자 ID
-    name: str = Form(...),
     nickname: str = Form(...),
     password: str = Form(...),
     introduce: str = Form(...),
@@ -443,7 +496,6 @@ async def update_user(
 
     # 사용자 데이터 업데이트 (img_url 포함)
     user_data_dict = {
-        "name": name,
         "nickname": nickname,
         "password": password,
         "introduce": introduce,
@@ -460,7 +512,6 @@ async def update_user(
 
     return UserMeResponse(
         id=updated_user.id,
-        name=updated_user.name,
         nickname=updated_user.nickname,
     )
 

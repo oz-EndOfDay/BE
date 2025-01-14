@@ -2,11 +2,13 @@ from collections import UserList
 from datetime import datetime, timedelta
 from typing import Any
 
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, status
 from sqlalchemy import Nullable, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
+from src.config.database.connection import get_async_session
 
 from .models import User
 from .schema.request import UpdateRequestBody
@@ -19,7 +21,7 @@ class UserNotFoundException(Exception):
 
 
 class UserRepository:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession = Depends(get_async_session)):
         self.session = session
 
     # 회원 가입 유저 생성
@@ -49,7 +51,6 @@ class UserRepository:
         return user
 
     async def create_user_from_social(self, social_user: SocialUser) -> int:
-        print("social user 생성")
         new_user = User(
             nickname=social_user.nickname,
             email=social_user.email,
