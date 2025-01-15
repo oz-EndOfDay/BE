@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple
+from typing import Dict, Tuple
 from urllib.parse import parse_qs
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status
@@ -19,17 +19,15 @@ class ConnectionManager:
         self.active_connections: Dict[Tuple[int, int], WebSocket] = {}
 
     async def connect(self, websocket: WebSocket, user_id: int, friend_id: int) -> None:
-        # 새로운 WebSocket 연결을 수락하고 저장
         await websocket.accept()
         self.active_connections[(user_id, friend_id)] = websocket
 
     def disconnect(self, user_id: int, friend_id: int) -> None:
-        # WebSocket 연결 종료 시 연결 제거
         if (user_id, friend_id) in self.active_connections:
             del self.active_connections[(user_id, friend_id)]
 
     async def send_personal_message(
-        self, message_data: Dict[str, Any], sender_id: int, friend_id: int
+        self, message_data: Dict[str, str], sender_id: int, friend_id: int
     ) -> None:
         for (user_id, room_id), websocket in self.active_connections.items():
             if room_id == friend_id and user_id != sender_id:
@@ -113,7 +111,7 @@ async def websocket_endpoint(
 async def send_message(
     message: MessageCreate,
     db: AsyncSession = Depends(get_db),
-) -> dict[str, str]:
+) -> Dict[str, str]:
     # 데이터베이스에 새 메시지 저장
     new_message = Message(
         user_id=message.user_id,
@@ -145,7 +143,6 @@ async def send_message(
         recipient_message, message.user_id, message.friend_id
     )
 
-    # 성공 응답 반환
     return {"status": "success", "message": "Message sent"}
 
 
