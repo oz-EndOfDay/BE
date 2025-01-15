@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 from urllib.parse import parse_qs
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status
@@ -29,11 +29,11 @@ class ConnectionManager:
             del self.active_connections[(user_id, friend_id)]
 
     async def send_personal_message(
-        self, message: str, sender_id: int, friend_id: int
+        self, message_data: Dict[str, Any], sender_id: int, friend_id: int
     ) -> None:
         for (user_id, room_id), websocket in self.active_connections.items():
             if room_id == friend_id and user_id != sender_id:
-                await websocket.send_text(message)
+                await websocket.send_json(message_data)
 
 
 manager = ConnectionManager()
@@ -76,9 +76,9 @@ async def websocket_endpoint(
 
         for msg in previous_messages:
             if msg.user_id == user_id:
-                await websocket.send_text(f"Me : {msg.message}")
+                await websocket.send_json({"sender": "Me", "message": msg.message})
             else:
-                await websocket.send_text(f"Friend : {msg.message}")
+                await websocket.send_json({"sender": "Friend", "message": msg.message})
 
         # 실시간 메시지 수신 및 처리 루프
         while True:
@@ -94,12 +94,12 @@ async def websocket_endpoint(
             await db.commit()
 
             # 발신자에게 메시지 표시
-            await websocket.send_text(f"Me : {content}")
+            sender_message = {"sender": "Me", "message": content}
+            await websocket.send_json(sender_message)
 
             # 수신자에게 메시지 전송
-            await manager.send_personal_message(
-                f"Friend : {content}", user_id, friend_id
-            )
+            recipient_message = {"sender": "Friend", "message": content}
+            await manager.send_personal_message(recipient_message, user_id, friend_id)
 
     except WebSocketDisconnect:
         manager.disconnect(user_id, friend_id)
@@ -107,6 +107,46 @@ async def websocket_endpoint(
     except Exception as e:
         print(f"Unexpected error: {e}")
         await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
+
+
+@router.post("/send_message/")
+async def send_message(
+    message: MessageCreate,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    # 데이터베이스에 새 메시지 저장
+    new_message = Message(
+        user_id=message.user_id,
+        friend_id=message.friend_id,
+        message=message.content,
+    )
+    db.add(new_message)
+    await db.commit()
+
+    # 발신자에게 보낼 메시지
+    sender_message = {
+        "sender": "Me",
+        "message": message.content,
+    }
+
+    # 수신자에게 보낼 메시지
+    recipient_message = {
+        "sender": f"User {message.user_id}",
+        "message": message.content,
+    }
+
+    # 발신자에게 메시지 전송 (현재 연결된 WebSocket 클라이언트)
+    await manager.send_personal_message(
+        sender_message, message.user_id, message.friend_id
+    )
+
+    # 수신자에게 메시지 전송 (현재 연결된 WebSocket 클라이언트)
+    await manager.send_personal_message(
+        recipient_message, message.user_id, message.friend_id
+    )
+
+    # 성공 응답 반환
+    return {"status": "success", "message": "Message sent"}
 
 
 # from typing import Dict, Tuple
@@ -250,18 +290,18 @@ async def websocket_endpoint(
 #         manager.disconnect(user_id, friend_id)
 #
 #
-@router.post("/send_message/")
-async def send_message(
-    message: MessageCreate,
-    db: AsyncSession = Depends(get_db),
-) -> dict[str, str]:
-    new_message = Message(
-        user_id=message.user_id, friend_id=message.friend_id, message=message.content
-    )
-    db.add(new_message)
-    await db.commit()
-
-    await manager.send_personal_message(
-        f"User {message.user_id}: {message.content}", message.user_id, message.friend_id
-    )
-    return {"status": "success", "message": "Message sent"}
+# @router.post("/send_message/")
+# async def send_message(
+#     message: MessageCreate,
+#     db: AsyncSession = Depends(get_db),
+# ) -> dict[str, str]:
+#     new_message = Message(
+#         user_id=message.user_id, friend_id=message.friend_id, message=message.content
+#     )
+#     db.add(new_message)
+#     await db.commit()
+#
+#     await manager.send_personal_message(
+#         f"User {message.user_id}: {message.content}", message.user_id, message.friend_id
+#     )
+#     return {"status": "success", "message": "Message sent"}
