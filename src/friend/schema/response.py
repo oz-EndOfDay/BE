@@ -56,6 +56,8 @@ class FriendsResponse(BaseModel):
     created_at: datetime | None
     friend_nickname: str  # user1의 닉네임
     friend_profile_img: Optional[str] = None
+    friend_introduce: Optional[str] = None
+    latest_message: Optional[str] = None
 
     class Config:
         from_attributes = True  # ORM 모델에서 Pydantic 모델로 변환을 쉽게 해줍니다.

@@ -13,6 +13,7 @@ from src.notification.schema.response import (
     NotificationResponse,
 )
 from src.notification.service.websocket import manager
+from src.user.schema.response import BasicResponse
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 settings = Settings()
@@ -30,23 +31,27 @@ async def create_notification(
     return NotificationResponse(status="success", data=notification_in_db)
 
 
-@router.post("/send", summary="알림 유저에게 전송 하기")
-async def send_notification(user_id: int, message: str) -> Dict[str, str]:
+@router.post("/send", summary="알림 유저에게 전송 하기", response_model=BasicResponse)
+async def send_notification(user_id: int, message: str) -> BasicResponse:
     try:
         print("알림 전송")
         await manager.broadcast(f"Notification for user {user_id}: {message}")
-        return {"status": "sent"}
+        return BasicResponse(message="전송 완료", status="success")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/{notification_id}", summary="알림 확인 시 '읽음' 상태 변경")
+@router.put(
+    "/{notification_id}",
+    summary="알림 확인 시 '읽음' 상태 변경",
+    response_model=BasicResponse,
+)
 async def mark_as_read(
     notification_id: int, session: AsyncSession = Depends(get_async_session)
-) -> dict[str, str]:
+) -> BasicResponse:
     noti_repo = NotificationRepository(session=session)
     result = await noti_repo.mark_as_read(notification_id)
     if result:
-        return {"status": "success"}
+        return BasicResponse(message="읽음.", status="success")
     else:
-        return {"status": "failed"}
+        return BasicResponse(message="처리 변경 실패.", status="error")
