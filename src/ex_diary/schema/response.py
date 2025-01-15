@@ -12,6 +12,7 @@ class ExDiaryBriefResponse(BaseModel):
     title: str
     write_date: date
     content: str
+    img_url: str
     created_at: datetime
 
     @classmethod
@@ -26,6 +27,7 @@ class ExDiaryBriefResponse(BaseModel):
             title=ex_diary.title or "",
             write_date=ex_diary.write_date or date.today(),
             content=ex_diary.content or "",
+            img_url=ex_diary.img_url or "",
             created_at=ex_diary.created_at or datetime.now(),
         )
 
