@@ -30,7 +30,7 @@ async def create_notification(
     return NotificationResponse(status="success", data=notification_in_db)
 
 
-@router.post("/send", summary="알림 유저에게 전송 하기")
+@router.post("/send", summary="알림 유저에게 전송 하기", response_model=None)
 async def send_notification(user_id: int, message: str) -> Dict[str, str]:
     try:
         print("알림 전송")
@@ -40,7 +40,7 @@ async def send_notification(user_id: int, message: str) -> Dict[str, str]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/{notification_id}", summary="알림 확인 시 '읽음' 상태 변경")
+@router.put("/{notification_id}", summary="알림 확인 시 '읽음' 상태 변경", response_model=None)
 async def mark_as_read(
     notification_id: int, session: AsyncSession = Depends(get_async_session)
 ) -> dict[str, str]:
