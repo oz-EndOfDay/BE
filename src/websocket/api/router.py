@@ -1,3 +1,4 @@
+import json
 from typing import Dict, Tuple
 from urllib.parse import parse_qs
 
@@ -13,7 +14,6 @@ from src.websocket.schemas import MessageCreate
 router = APIRouter()
 
 
-# WebSocket 연결과 메시지 관리를 위한 클래스
 class ConnectionManager:
     def __init__(self) -> None:
         self.active_connections: Dict[Tuple[int, int], WebSocket] = {}
@@ -80,7 +80,15 @@ async def websocket_endpoint(
 
         # 실시간 메시지 수신 및 처리 루프
         while True:
-            content = await websocket.receive_text()
+            raw_content = await websocket.receive_text()
+
+            # JSON 문자열을 딕셔너리로 변환
+            try:
+                content_data = json.loads(raw_content)  # {"message": "안녕하세요"}
+                content = content_data.get("message", "")  # 실제 메시지 내용 추출
+            except json.JSONDecodeError:
+                # 만약 JSON 형식이 아니라면 기본적으로 raw_content를 사용
+                content = raw_content
 
             # 새 메시지 데이터베이스에 저장
             new_message = Message(
