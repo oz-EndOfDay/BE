@@ -167,9 +167,8 @@ async def accept_friend(
 @router.get("", summary="친구 목록 조회", response_model=FriendsListResponse)
 async def list_friends(
     current_user_id: int = Depends(authenticate),
-    session: AsyncSession = Depends(get_async_session),
+    frd_repo: FriendRepository = Depends(),
 ) -> FriendsListResponse:
-    frd_repo = FriendRepository(session)
     friends = await frd_repo.get_friends(current_user_id)
 
     response_data = [
@@ -181,6 +180,7 @@ async def list_friends(
             created_at=friend.created_at,
             friend_nickname=friend.user2.nickname if friend.user_id1 == current_user_id else friend.user1.nickname,  # type: ignore
             friend_profile_img=friend.user2.img_url if friend.user_id1 == current_user_id else friend.user1.img_url,  # type: ignore
+            friend_introduce=friend.user2.introduce if friend.user_id1 == current_user_id else friend.user1.introduce,  # type: ignore
         )
         for friend in friends
     ]
