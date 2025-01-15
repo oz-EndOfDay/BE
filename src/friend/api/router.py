@@ -171,9 +171,13 @@ async def list_friends(
     frd_repo: FriendRepository = Depends(),
     msg_repo: ChatRepository = Depends(),
 ) -> FriendsListResponse:
+    # Fetch friends for the current user
     friends = await frd_repo.get_friends(current_user_id)
-    message = await msg_repo.get_latest_messages_by_room(current_user_id)
 
+    # Fetch latest messages for all friends
+    latest_messages = await msg_repo.get_latest_messages_by_room(current_user_id)
+
+    # Prepare response data
     response_data = [
         FriendsResponse(
             id=friend.id,
@@ -185,9 +189,9 @@ async def list_friends(
             friend_profile_img=friend.user2.img_url if friend.user_id1 == current_user_id else friend.user1.img_url,  # type: ignore
             friend_introduce=friend.user2.introduce if friend.user_id1 == current_user_id else friend.user1.introduce,  # type: ignore
             latest_message=(
-                f"Me : {message.message}"  # type: ignore
-                if current_user_id == message.user_id  # type: ignore
-                else f"Friend : {message.message}"  # type: ignore
+                latest_messages.get(friend.id).message  # type: ignore
+                if latest_messages.get(friend.id)
+                else None
             ),
         )
         for friend in friends
