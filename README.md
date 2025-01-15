@@ -1,10 +1,39 @@
-## 📖 프로젝트 소개
+# 하루 끝 🌌
 
->더 이상 독서는 혼자만의 취미가 아니다❌
-책을 사랑하는, 책과 가까워지고 싶은, 혹은 비슷한 사람들끼리 취미를 공유하고 싶어하는
-모두가 모여 하나의 마을을 형성하는 `프로젝트 예시`는 사용자 모두가 이웃처럼
-서로의 지식을 나누고 책을 공유합니다.
-함께하는 독서 습관을 만들어주는 서비스, `프로젝트 예시`에 오신 걸 환영합니다!
+## 📖 프로젝트 소개
+더 이상 일기는 혼자만의 기록이 아닙니다!  
+매일의 소중한 순간을 담는 일기, 이제는 함께 나누고 교감할 수 있는 새로운 방식으로 경험하세요.  
+
+`하루 끝`은 단순한 일기 작성 도구를 넘어,  
+친구들과 서로의 일상을 공유하고 연결되며,  
+효율적으로 일기를 관리하고 분석할 수 있는 **일기 및 교환 일기 플랫폼**입니다.  
+
+---
+
+## 주요 기능 🌟  
+- **다양한 형식 지원**  
+  텍스트, 이미지 등 원하는 방식으로 자유롭게 기록하세요.  
+- **교환 일기**  
+  친구와 일기를 주고받으며 새로운 관점과 영감을 얻어보세요.  
+- **일기 분석**  
+  AI와 함께 일기를 분석하여 오늘을 위로받고 더 나은 내일로 나아가보세요.  
+- **소통과 교감**  
+  같은 관심사를 가진 사용자들과 함께 성장하는 경험을 제공합니다.  
+
+---
+
+## 이런 분들에게 추천합니다! 🎯  
+- 매일의 기록을 더 의미 있게 남기고 싶은 분  
+- 혼자만의 기록을 넘어 다른 사람들과 교감하고 싶은 분  
+- 일기의 형식에 구애받지 않고 나만의 일기를 쓰고 쉽게 관리하고 싶은 분  
+
+---
+
+## 시작하기 🚀  
+1. **웹사이트 접속**: 간단히 가입하고 [ 시작 ](https://endofday.store/)하세요.  
+2. **일기 작성**: 텍스트, 이미지 등 다양한 형식으로 당신의 하루를 기록하세요.  
+3. **교환하기**: 친구와 일기를 공유하며 서로의 이야기를 알아가세요.  😊
+
 ---
 ## 🔗 배포 링크
 
@@ -19,7 +48,7 @@
 
 ---
 
-## 🖥️ 서비스 소개
+## 🖥️ 서비스 소개 예시
 |   메인 화면 1  |  메인 화면 2  |   소셜 로그인 1   |
 |:--------:|:------:|:--------:|
 | <img src="https://lh6.googleusercontent.com/M7RxaY_ZsF5sQcqiIOafdBGHuVGqKrQ0c07hzOtLgkhxYTK-aRKWdhkMfi8DaoZxyDWLZKhdUEDKBIEpETcm2_sH5JdW69mrOXzASMQYHFEiaP0QbgCEHa5bnKzITG-v9ztn0QfbCeZtznJ8q-SDo2qoEA=s2048" alt="MainPage1"> |   <img src="https://lh6.googleusercontent.com/WSSZM-N1tpBvXui0ivLMaSJv5u-Jn8oUNXik40GOW7thMqmNdMPrjfO4-halmEZ80GuBBlI5ENm8TtDovjSOMRqHE6Z5w7F5yYxdplO643k3wfhyW4wT0IUT15Rv6kk_FAnST07-50NOOeXHjRfjh6dEBA=s2048" alt="MainPage2">  | <img src="https://lh6.googleusercontent.com/LgLnyK4xbij_SmBQd_9b-zKL7NjFBceXLFr97o-S9z4JMw7bZaO4E9W5SbwJn_xOAVu4xCk9Se0eqShfP8YkzkaL-QilqVa6LRaQEQ5h4PHLZOgmT8ZByBV-eEIZEr9D3I1mB6qu5nhIehup3910FytnrQ=s2048" alt="Login1"> |
@@ -197,12 +226,12 @@
 
 
 ## :clipboard: Documents
-> [📜 API 명세서 예시](https://docs.google.com/spreadsheets/d/1XODUQC8tFNQjoZS7I4rcyaQpin6WzuuruZIVmdMwmeU/edit#gid=0)
+> [📜 API 명세서](https://docs.google.com/spreadsheets/d/1F6xNcYVO3vJ38lsJw_J3GF30JE0AERvMfNzOfwWoeyE/edit?gid=1565530336#gid=1565530336)
 > 
-> [📜 요구사항 정의서 예시](https://docs.google.com/spreadsheets/d/1BaDEpeytl_rQ_vckIXGJtCL4NcmPvemCSnXJnhckzLU/edit?usp=sharing)
+> [📜 요구사항 정의서](https://docs.google.com/spreadsheets/d/10pRKf7R6h8pqu2bZXpOhcKV4o6SFsKuUjfmEoLp117A/edit?gid=428803499#gid=428803499)
 > 
-> [📜 ERD 예시](https://drive.google.com/file/d/1jvaFIwfOkKLRriFZxzOwJTE-FJ7H3IFe/view?usp=sharing)
+> [📜 ERD](https://drive.google.com/file/d/1gBhn-L2O0gz134EuGWs3q__Hozn9wWrF/view?usp=sharing)
 > 
-> [📜 테이블 명세서 예시](https://docs.google.com/spreadsheets/d/13y8xi67UQYCzX1xgSORtlA1_vXRFq6OQuVDG2o7fhO0/edit#gid=0)
+> [📜 테이블 명세서](https://docs.google.com/spreadsheets/d/1t3OtOHbMm0FW5SeMhXcjHg2KSLSbOJCqFpOWH59G9Yw/edit?gid=0#gid=0)
 >
 > [📜 화면 정의서 예시](https://docs.google.com/spreadsheets/d/1vud5xV8rB9Y6akOIma49hSzdZsoj8DVG0-fYE4NdP_g/edit?usp=sharing)
