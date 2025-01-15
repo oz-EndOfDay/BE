@@ -25,6 +25,7 @@ from src.notification.repository import NotificationRepository
 from src.notification.service.websocket import manager
 from src.user.repository import UserRepository
 from src.user.service.authentication import authenticate
+from src.websocket.repository import ChatRepository
 
 router = APIRouter(prefix="/friends", tags=["Friend"])
 
@@ -168,8 +169,10 @@ async def accept_friend(
 async def list_friends(
     current_user_id: int = Depends(authenticate),
     frd_repo: FriendRepository = Depends(),
+    msg_repo: ChatRepository = Depends(),
 ) -> FriendsListResponse:
     friends = await frd_repo.get_friends(current_user_id)
+    message = await msg_repo.get_latest_messages_by_room(current_user_id)
 
     response_data = [
         FriendsResponse(
@@ -181,6 +184,11 @@ async def list_friends(
             friend_nickname=friend.user2.nickname if friend.user_id1 == current_user_id else friend.user1.nickname,  # type: ignore
             friend_profile_img=friend.user2.img_url if friend.user_id1 == current_user_id else friend.user1.img_url,  # type: ignore
             friend_introduce=friend.user2.introduce if friend.user_id1 == current_user_id else friend.user1.introduce,  # type: ignore
+            latest_message=(
+                f"Me : {message.message}"  # type: ignore
+                if current_user_id == message.user_id  # type: ignore
+                else f"Friend : {message.message}"  # type: ignore
+            ),
         )
         for friend in friends
     ]

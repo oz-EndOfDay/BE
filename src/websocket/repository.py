@@ -26,3 +26,12 @@ class ChatRepository:
 
         # 2) 데이터를 ORM 객체로 변환(I/O 대기 없음)
         return result.scalars().all()
+
+    async def get_latest_messages_by_room(self, chatroom_id: int) -> Message | None:
+        result = await self.session.execute(
+            select(Message)
+            .filter_by(chatroom_id=chatroom_id)
+            .order_by(Message.created_at.desc())
+            .limit(1)
+        )
+        return result.scalars().first()
