@@ -234,4 +234,4 @@
 > 
 > [📜 테이블 명세서](https://docs.google.com/spreadsheets/d/1t3OtOHbMm0FW5SeMhXcjHg2KSLSbOJCqFpOWH59G9Yw/edit?gid=0#gid=0)
 >
-> [📜 화면 정의서 예시](https://docs.google.com/spreadsheets/d/1vud5xV8rB9Y6akOIma49hSzdZsoj8DVG0-fYE4NdP_g/edit?usp=sharing)
+> [📜 화면 정의서](https://www.figma.com/design/ok3cpOmMOy44xVd5w6qpIX/Untitled?node-id=0-1&p=f&t=POxV5d6vhi1xnTq0-0)
