@@ -129,7 +129,7 @@ class UserRepository:
         user = await self.get_user_by_email(user_email)
         if user is None:
             raise UserNotFoundException(f"User with email {user_email} not found")
-        temp_password = generate_password()
+        temp_password = generate_password() + "1@"
         user.password = hash_password(temp_password)
         await self.session.commit()
         return temp_password
