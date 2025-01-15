@@ -1,12 +1,14 @@
 from typing import Dict, Tuple
+from urllib.parse import parse_qs
+
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from urllib.parse import parse_qs
 
 from src.config.database.connection_async import get_db
 from src.user.service.authentication import decode_access_token
 from src.websocket.models import Message
+from src.websocket.schemas import MessageCreate
 
 router = APIRouter()
 
@@ -27,7 +29,7 @@ class ConnectionManager:
             del self.active_connections[(user_id, friend_id)]
 
     async def send_personal_message(
-            self, message: str, sender_id: int, friend_id: int
+        self, message: str, sender_id: int, friend_id: int
     ) -> None:
         for (user_id, room_id), websocket in self.active_connections.items():
             if room_id == friend_id and user_id != sender_id:
@@ -39,14 +41,14 @@ manager = ConnectionManager()
 
 @router.websocket("/ws/{friend_id}")
 async def websocket_endpoint(
-        websocket: WebSocket,
-        friend_id: int,
-        db: AsyncSession = Depends(get_db),
+    websocket: WebSocket,
+    friend_id: int,
+    db: AsyncSession = Depends(get_db),
 ) -> None:
     try:
         # URL 쿼리 파라미터에서 토큰 추출
-        query_params = parse_qs(websocket.scope['query_string'].decode())
-        token = query_params.get('token', [None])[0]
+        query_params = parse_qs(websocket.scope["query_string"].decode())
+        token = query_params.get("token", [None])[0]
         if not token:
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
@@ -105,6 +107,8 @@ async def websocket_endpoint(
     except Exception as e:
         print(f"Unexpected error: {e}")
         await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
+
+
 # from typing import Dict, Tuple
 #
 # from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status
@@ -246,18 +250,18 @@ async def websocket_endpoint(
 #         manager.disconnect(user_id, friend_id)
 #
 #
-# @router.post("/send_message/")
-# async def send_message(
-#     message: MessageCreate,
-#     db: AsyncSession = Depends(get_db),
-# ) -> dict[str, str]:
-#     new_message = Message(
-#         user_id=message.user_id, friend_id=message.friend_id, message=message.content
-#     )
-#     db.add(new_message)
-#     await db.commit()
-#
-#     await manager.send_personal_message(
-#         f"User {message.user_id}: {message.content}", message.user_id, message.friend_id
-#     )
-#     return {"status": "success", "message": "Message sent"}
+@router.post("/send_message/")
+async def send_message(
+    message: MessageCreate,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    new_message = Message(
+        user_id=message.user_id, friend_id=message.friend_id, message=message.content
+    )
+    db.add(new_message)
+    await db.commit()
+
+    await manager.send_personal_message(
+        f"User {message.user_id}: {message.content}", message.user_id, message.friend_id
+    )
+    return {"status": "success", "message": "Message sent"}
