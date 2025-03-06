@@ -56,11 +56,17 @@ async def write_diary(
     diary_repo: DiaryRepository = Depends(),
 ) -> BasicResponse:
     # S3 클라이언트 설정
+    # s3_client = boto3.client(
+    #     "s3",
+    #     aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+    #     aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+    #     region_name=settings.AWS_REGION,
+    # )
     s3_client = boto3.client(
         "s3",
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_REGION,
+        aws_access_key_id=settings.NCP_ACCESS_KEY,
+        aws_secret_access_key=settings.NCP_SECRET_KEY,
+        endpoint_url=settings.NCP_ENDPOINT_URL,
     )
 
     img_url: Optional[str] = None
@@ -93,15 +99,22 @@ async def write_diary(
 
             # S3에 업로드
             s3_key = f"diaries/{image_filename}"
+            # s3_client.upload_fileobj(
+            #     image.file,  # type: ignore
+            #     settings.S3_BUCKET_NAME,
+            #     s3_key,
+            #     ExtraArgs={"ContentType": image.content_type},  # type: ignore
+            # )
             s3_client.upload_fileobj(
                 image.file,  # type: ignore
-                settings.S3_BUCKET_NAME,
+                settings.NCP_BUCKET_NAME,
                 s3_key,
-                ExtraArgs={"ContentType": image.content_type},  # type: ignore
+                ExtraArgs={'ACL': 'public-read'},  # type: ignore
             )
 
             # 공개 URL 생성
-            img_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+            # img_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+            img_url = f"{settings.NCP_ENDPOINT_URL}/{settings.NCP_BUCKET_NAME}/{s3_key}"
 
         except ClientError as e:
             raise HTTPException(

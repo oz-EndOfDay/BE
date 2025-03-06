@@ -16,11 +16,17 @@ logger = logging.getLogger(__name__)
 
 
 async def delete_expired_diaries_task() -> None:
+    # s3_client = boto3.client(
+    #     "s3",
+    #     aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+    #     aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+    #     region_name=settings.AWS_REGION,
+    # )
     s3_client = boto3.client(
         "s3",
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_REGION,
+        aws_access_key_id=settings.NCP_ACCESS_KEY,
+        aws_secret_access_key=settings.NCP_SECRET_KEY,
+        endpoint_url=settings.NCP_ENDPOINT_URL,
     )
 
     async with AsyncSessionFactory() as session:
@@ -48,7 +54,8 @@ async def delete_expired_diaries(
         if diary.img_url:
             try:
                 s3_key = diary.img_url.split(
-                    f"{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/"
+                    # f"{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/"
+                    f"{settings.NCP_ENDPOINT_URL}/{settings.NCP_BUCKET_NAME}/"
                 )[1]
 
                 s3_client.delete_object(Bucket=settings.S3_BUCKET_NAME, Key=s3_key)

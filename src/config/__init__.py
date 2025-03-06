@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     KAKAO_REDIRECT_URI: str
     KAKAO_CLIENT_SECRET: str
     OPENAI_API_KEY: str
+    NCP_ACCESS_KEY: str
+    NCP_SECRET_KEY: str
+    NCP_BUCKET_NAME: str
+    NCP_ENDPOINT_URL: str
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
