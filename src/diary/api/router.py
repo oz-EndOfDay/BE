@@ -109,7 +109,7 @@ async def write_diary(
                 image.file,  # type: ignore
                 settings.NCP_BUCKET_NAME,
                 s3_key,
-                ExtraArgs={'ACL': 'public-read'},  # type: ignore
+                ExtraArgs={"ACL": "public-read"},
             )
 
             # 공개 URL 생성
