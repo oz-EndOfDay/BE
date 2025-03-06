@@ -107,17 +107,17 @@
 #     return img_byte_arr
 
 import io
-import uuid
-import time
-from datetime import datetime, timedelta
 import logging
+import time
+import uuid
+from datetime import datetime, timedelta
 
 import boto3
 import pytest
+from botocore.exceptions import ClientError
 from PIL import Image
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from botocore.exceptions import ClientError
 
 from src.config import Settings
 from src.diary.models import Diary
@@ -200,7 +200,9 @@ async def test_delete_expired_diaries_with_ncp(async_session: AsyncSession):
         s3_client.head_object(Bucket=settings.NCP_BUCKET_NAME, Key=s3_key)
 
         # 이미지가 여전히 존재하면 수동으로 삭제 시도
-        logging.warning("이미지가 자동으로 삭제되지 않았습니다. 수동 삭제를 시도합니다.")
+        logging.warning(
+            "이미지가 자동으로 삭제되지 않았습니다. 수동 삭제를 시도합니다."
+        )
         s3_client.delete_object(Bucket=settings.NCP_BUCKET_NAME, Key=s3_key)
 
         # 삭제 후 다시 확인
@@ -208,8 +210,8 @@ async def test_delete_expired_diaries_with_ncp(async_session: AsyncSession):
         s3_client.head_object(Bucket=settings.NCP_BUCKET_NAME, Key=s3_key)
         pytest.fail("이미지 수동 삭제 후에도 여전히 존재합니다.")
     except ClientError as e:
-        error_code = e.response['Error']['Code']
-        if error_code == '404':
+        error_code = e.response["Error"]["Code"]
+        if error_code == "404":
             logging.info("이미지가 성공적으로 삭제되었습니다.")
         else:
             pytest.fail(f"예상치 못한 오류 발생: {str(e)}")
